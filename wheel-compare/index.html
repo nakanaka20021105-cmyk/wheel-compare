@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ホイール比較</title>
+  <meta name="description" content="現在と交換候補のホイールのリム幅・オフセット・タイヤサイズから、ホイール位置と外径の理論上の差を計算します。">
+  <link rel="stylesheet" href="css/style.css">
+  <!-- type="module" にすると import / export が使える（ローカルサーバー経由で開くこと） -->
+  <script type="module" src="js/main.js"></script>
+</head>
+<body>
+  <header class="site-header">
+    <h1>ホイール＆オフセット比較</h1>
+    <p>現在と交換候補のホイール位置・タイヤ外径の理論上の差を計算します。</p>
+  </header>
+
+  <main class="layout">
+    <!-- ========== 1. 入力 ========== -->
+    <section class="panel input-panel" aria-labelledby="input-heading">
+      <h2 id="input-heading"><span class="step">1</span>入力</h2>
+
+      <form id="wheel-form" novalidate>
+        <!-- 現在 / 交換候補 を左右に並べた比較表。各入力には見えないラベルで正式名を付ける -->
+        <div class="compare-grid" role="group" aria-label="ホイールとタイヤ">
+          <div class="compare-head" aria-hidden="true"></div>
+          <div class="compare-head head-current" aria-hidden="true"><span class="dot dot-current"></span>現在</div>
+          <div class="compare-head head-candidate" aria-hidden="true"><span class="dot dot-candidate"></span>交換候補</div>
+
+          <!-- リム幅 -->
+          <div class="row-label" aria-hidden="true">リム幅</div>
+          <div class="cell">
+            <label class="visually-hidden" for="current-rimWidthJ">現在のリム幅（J）</label>
+            <div class="input-unit">
+              <input id="current-rimWidthJ" data-group="current" data-field="rimWidthJ"
+                     type="text" inputmode="decimal" value="7" autocomplete="off"
+                     aria-describedby="current-rimWidthJ-error">
+              <span class="unit" aria-hidden="true">J</span>
+            </div>
+            <p class="error" id="current-rimWidthJ-error"></p>
+          </div>
+          <div class="cell">
+            <label class="visually-hidden" for="candidate-rimWidthJ">交換候補のリム幅（J）</label>
+            <div class="input-unit">
+              <input id="candidate-rimWidthJ" data-group="candidate" data-field="rimWidthJ"
+                     type="text" inputmode="decimal" value="8" autocomplete="off"
+                     aria-describedby="candidate-rimWidthJ-error">
+              <span class="unit" aria-hidden="true">J</span>
+            </div>
+            <p class="error" id="candidate-rimWidthJ-error"></p>
+          </div>
+
+          <!-- オフセット（符号 + 数値） -->
+          <div class="row-label" aria-hidden="true">オフセット</div>
+          <div class="cell">
+            <div class="signed-input">
+              <div class="sign-toggle" role="radiogroup" aria-label="現在のオフセットの符号">
+                <input type="radio" id="current-offsetSign-plus" name="current-offsetSign"
+                       data-group="current" data-field="offsetSign" value="+" checked aria-label="プラス">
+                <label for="current-offsetSign-plus" aria-hidden="true">+</label>
+                <input type="radio" id="current-offsetSign-minus" name="current-offsetSign"
+                       data-group="current" data-field="offsetSign" value="-" aria-label="マイナス">
+                <label for="current-offsetSign-minus" aria-hidden="true">−</label>
+              </div>
+              <label class="visually-hidden" for="current-offsetAbs">現在のオフセットの数値（mm）</label>
+              <input id="current-offsetAbs" data-group="current" data-field="offsetAbs" data-error-key="offsetMm"
+                     type="text" inputmode="decimal" value="48" autocomplete="off"
+                     aria-describedby="current-offsetMm-error">
+              <span class="unit-after" aria-hidden="true">mm</span>
+            </div>
+            <p class="error" id="current-offsetMm-error"></p>
+          </div>
+          <div class="cell">
+            <div class="signed-input">
+              <div class="sign-toggle" role="radiogroup" aria-label="交換候補のオフセットの符号">
+                <input type="radio" id="candidate-offsetSign-plus" name="candidate-offsetSign"
+                       data-group="candidate" data-field="offsetSign" value="+" checked aria-label="プラス">
+                <label for="candidate-offsetSign-plus" aria-hidden="true">+</label>
+                <input type="radio" id="candidate-offsetSign-minus" name="candidate-offsetSign"
+                       data-group="candidate" data-field="offsetSign" value="-" aria-label="マイナス">
+                <label for="candidate-offsetSign-minus" aria-hidden="true">−</label>
+              </div>
+              <label class="visually-hidden" for="candidate-offsetAbs">交換候補のオフセットの数値（mm）</label>
+              <input id="candidate-offsetAbs" data-group="candidate" data-field="offsetAbs" data-error-key="offsetMm"
+                     type="text" inputmode="decimal" value="45" autocomplete="off"
+                     aria-describedby="candidate-offsetMm-error">
+              <span class="unit-after" aria-hidden="true">mm</span>
+            </div>
+            <p class="error" id="candidate-offsetMm-error"></p>
+          </div>
+
+          <!-- タイヤサイズ（幅 / 扁平率 R リム径） -->
+          <div class="row-label" aria-hidden="true">タイヤ<span class="row-label-sub">幅/扁平率R径</span></div>
+          <div class="cell">
+            <div class="tire-size" role="group" aria-label="現在のタイヤサイズ">
+              <span class="tire-part">
+                <label class="visually-hidden" for="current-tireWidth">現在のタイヤ幅（mm、105〜405、10mm刻み）</label>
+                <input id="current-tireWidth" data-group="current" data-field="tireWidth"
+                       type="number" inputmode="numeric" min="105" max="405" step="10" value="205"
+                       autocomplete="off" aria-describedby="current-tireWidth-error">
+                <span class="tire-sep" aria-hidden="true">/</span>
+                <label class="visually-hidden" for="current-tireAspect">現在の扁平率（%、5〜90、5%刻み）</label>
+                <input id="current-tireAspect" data-group="current" data-field="tireAspect"
+                       type="number" inputmode="numeric" min="5" max="90" step="5" value="50"
+                       autocomplete="off" aria-describedby="current-tireAspect-error">
+              </span>
+              <span class="tire-part">
+                <span class="tire-sep" aria-hidden="true">R</span>
+                <label class="visually-hidden" for="current-tireRimInch">現在のリム径（インチ、7〜35）</label>
+                <input id="current-tireRimInch" data-group="current" data-field="tireRimInch"
+                       type="number" inputmode="numeric" min="7" max="35" step="1" value="17"
+                       autocomplete="off" aria-describedby="current-tireRimInch-error">
+              </span>
+            </div>
+            <p class="error" id="current-tireWidth-error"></p>
+            <p class="error" id="current-tireAspect-error"></p>
+            <p class="error" id="current-tireRimInch-error"></p>
+          </div>
+          <div class="cell">
+            <div class="tire-size" role="group" aria-label="交換候補のタイヤサイズ">
+              <span class="tire-part">
+                <label class="visually-hidden" for="candidate-tireWidth">交換候補のタイヤ幅（mm、105〜405、10mm刻み）</label>
+                <input id="candidate-tireWidth" data-group="candidate" data-field="tireWidth"
+                       type="number" inputmode="numeric" min="105" max="405" step="10" value="205"
+                       autocomplete="off" aria-describedby="candidate-tireWidth-error">
+                <span class="tire-sep" aria-hidden="true">/</span>
+                <label class="visually-hidden" for="candidate-tireAspect">交換候補の扁平率（%、5〜90、5%刻み）</label>
+                <input id="candidate-tireAspect" data-group="candidate" data-field="tireAspect"
+                       type="number" inputmode="numeric" min="5" max="90" step="5" value="50"
+                       autocomplete="off" aria-describedby="candidate-tireAspect-error">
+              </span>
+              <span class="tire-part">
+                <span class="tire-sep" aria-hidden="true">R</span>
+                <label class="visually-hidden" for="candidate-tireRimInch">交換候補のリム径（インチ、7〜35）</label>
+                <input id="candidate-tireRimInch" data-group="candidate" data-field="tireRimInch"
+                       type="number" inputmode="numeric" min="7" max="35" step="1" value="17"
+                       autocomplete="off" aria-describedby="candidate-tireRimInch-error">
+              </span>
+            </div>
+            <p class="error" id="candidate-tireWidth-error"></p>
+            <p class="error" id="candidate-tireAspect-error"></p>
+            <p class="error" id="candidate-tireRimInch-error"></p>
+          </div>
+        </div>
+
+        <fieldset class="clearance-fields">
+          <legend>現在のクリアランス <span class="optional">任意</span></legend>
+          <p class="note">入力した項目だけ、交換候補を装着した後の推定残量を計算します。数値を空にすると、その側は計算しません。− は、現在の状態ですでに基準位置を超えていることを表します。</p>
+          <div class="clearance-grid">
+            <div class="cell">
+              <label for="clearance-outerAbs">外側<span class="label-sub">フェンダー等まで</span></label>
+              <div class="signed-input">
+                <div class="sign-toggle" role="radiogroup" aria-label="外側クリアランスの符号">
+                  <input type="radio" id="clearance-outerSign-plus" name="clearance-outerSign"
+                         data-group="clearance" data-field="outerSign" value="+" checked aria-label="プラス">
+                  <label for="clearance-outerSign-plus" aria-hidden="true">+</label>
+                  <input type="radio" id="clearance-outerSign-minus" name="clearance-outerSign"
+                         data-group="clearance" data-field="outerSign" value="-" aria-label="マイナス">
+                  <label for="clearance-outerSign-minus" aria-hidden="true">−</label>
+                </div>
+                <input id="clearance-outerAbs" data-group="clearance" data-field="outerAbs" data-error-key="outerMm"
+                       type="text" inputmode="decimal" value="20" placeholder="未入力" autocomplete="off"
+                       aria-describedby="clearance-outerMm-error">
+                <span class="unit-after" aria-hidden="true">mm</span>
+              </div>
+              <p class="error" id="clearance-outerMm-error"></p>
+            </div>
+            <div class="cell">
+              <label for="clearance-innerAbs">内側<span class="label-sub">サスペンション等の最寄り部品まで</span></label>
+              <div class="signed-input">
+                <div class="sign-toggle" role="radiogroup" aria-label="内側クリアランスの符号">
+                  <input type="radio" id="clearance-innerSign-plus" name="clearance-innerSign"
+                         data-group="clearance" data-field="innerSign" value="+" checked aria-label="プラス">
+                  <label for="clearance-innerSign-plus" aria-hidden="true">+</label>
+                  <input type="radio" id="clearance-innerSign-minus" name="clearance-innerSign"
+                         data-group="clearance" data-field="innerSign" value="-" aria-label="マイナス">
+                  <label for="clearance-innerSign-minus" aria-hidden="true">−</label>
+                </div>
+                <input id="clearance-innerAbs" data-group="clearance" data-field="innerAbs" data-error-key="innerMm"
+                       type="text" inputmode="decimal" value="20" placeholder="未入力" autocomplete="off"
+                       aria-describedby="clearance-innerMm-error">
+                <span class="unit-after" aria-hidden="true">mm</span>
+              </div>
+              <p class="error" id="clearance-innerMm-error"></p>
+            </div>
+          </div>
+        </fieldset>
+
+        <p class="note range-note" id="input-range-note"></p>
+      </form>
+    </section>
+
+    <div class="output">
+      <!-- ========== 2. 結果 ========== -->
+      <section class="panel" id="results" aria-labelledby="results-heading">
+        <h2 id="results-heading"><span class="step">2</span>比較結果<span class="heading-sub">現在 → 交換候補</span></h2>
+
+        <p id="results-error" class="error-box" role="alert" hidden>入力内容を確認してください。エラーのある項目を直すと結果が表示されます。</p>
+
+        <div id="results-body">
+          <!-- 重要な結果（大きく表示） -->
+          <dl class="summary-cards" aria-live="polite">
+            <div class="card">
+              <dt>ホイール外側端</dt>
+              <dd class="card-value" id="r-outer-edge"></dd>
+              <dd class="card-sub" id="r-outer-edge-sub"></dd>
+            </div>
+            <div class="card">
+              <dt>ホイール内側端</dt>
+              <dd class="card-value" id="r-inner-edge"></dd>
+              <dd class="card-sub" id="r-inner-edge-sub"></dd>
+            </div>
+            <div class="card">
+              <dt>外径差率<span class="tag">参考値</span></dt>
+              <dd class="card-value" id="r-diameter-percent"></dd>
+              <dd class="card-sub" id="r-diameter"></dd>
+            </div>
+            <div class="card">
+              <dt>理論上の最低地上高変化</dt>
+              <dd class="card-value" id="r-ground-clearance"></dd>
+              <dd class="card-sub">外径差の半分（理論値）</dd>
+            </div>
+          </dl>
+
+          <!-- クリアランス（入力があるときだけ） -->
+          <div id="r-clearance-section" hidden>
+            <h3>クリアランスの推定残量（交換候補装着後）</h3>
+            <dl class="clearance-cards" id="r-clearance"></dl>
+            <p class="note">静止状態での単純な引き算です。走行中（ハンドル操作・サスペンションの伸縮・荷重変化）の干渉や、法的な適合を保証するものではありません。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== 3. 断面図 ========== -->
+      <section class="panel" id="diagram-section" aria-labelledby="diagram-heading">
+        <div class="diagram-header">
+          <h2 id="diagram-heading"><span class="step">3</span>断面図<span class="heading-sub">ホイール・タイヤ断面模式図</span></h2>
+          <p class="scale-badge" id="diagram-scale-badge"></p>
+        </div>
+        <p class="scale-note" id="diagram-scale-note"></p>
+
+        <div id="diagram-wrap">
+          <svg id="diagram" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+
+        <ul class="legend" aria-label="凡例">
+          <li><span class="swatch swatch-current"></span>現在のホイール</li>
+          <li><span class="swatch swatch-candidate"></span>交換候補のホイール</li>
+          <li><span class="swatch swatch-tire"></span>タイヤ（模式）</li>
+          <li><span class="swatch swatch-hub"></span>ハブ取付面（0mm）</li>
+          <li><span class="swatch swatch-center"></span>リム中心線</li>
+          <li><span class="swatch swatch-et"></span>ET（中心線→ハブ取付面）</li>
+          <li id="legend-fender" hidden><span class="swatch swatch-fender"></span>フェンダー等</li>
+          <li id="legend-part" hidden><span class="swatch swatch-part"></span>最寄り部品</li>
+        </ul>
+
+        <p class="note">
+          ホイール（リム）の位置を比べるための図で、左が車体外側、右が車体内側です。ハブ取付面を図の左右中央に置いています。タイヤは外径（高さ）を比べるための模式表示で、幅はリム幅を基準に描いています。
+          ET（オフセット）はリム中心線からハブ取付面までの距離で、ハブ取付面が中心線より外側ならプラス、内側ならマイナスです。
+          <strong>実際のタイヤ側面の位置や突出量は表していません。</strong>
+          フェンダー等は「現在の外側端＋外側クリアランス」、最寄り部品は「現在の内側端＋内側クリアランス」の位置です。
+        </p>
+      </section>
+
+      <!-- ========== 詳細（折りたたみ） ========== -->
+      <section class="panel details-panel" id="details-section" aria-label="詳細">
+        <details class="details" data-open-on-wide>
+          <summary>メーター表示時の理論実速度<span class="tag">参考値</span></summary>
+          <table class="result-table">
+            <thead>
+              <tr><th scope="col">メーター表示</th><th scope="col">理論実速度</th><th scope="col">差</th></tr>
+            </thead>
+            <tbody id="r-speedometer"></tbody>
+          </table>
+        </details>
+
+        <details class="details" data-open-on-wide>
+          <summary>計算に使った値</summary>
+          <div class="table-scroll">
+            <table class="result-table">
+              <thead>
+                <tr><th scope="col">項目</th><th scope="col">現在</th><th scope="col">交換候補</th></tr>
+              </thead>
+              <tbody id="r-details"></tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+
+      <section class="panel notes" aria-labelledby="notes-heading">
+        <h2 id="notes-heading">注意事項</h2>
+        <ul>
+          <li>「ホイール外側端」「ホイール内側端」は、リム幅（J）とオフセットから求めた理論上の位置です。タイヤ側面の実際の位置は、銘柄・実測幅・適用リム幅などで変わるため、判定の対象にしていません。</li>
+          <li>「理論上の最低地上高変化」は、タイヤ外径（理論値）の半径の差です。実際の値は、空気圧・荷重・タイヤの実測外径によって変わります。</li>
+          <li>外径差率とメーター表示時の理論実速度は参考値です。このツールは車検の合否を判定しません。</li>
+          <li>入力できる範囲は計算できる範囲であり、その範囲内のサイズが装着可能・安全・合法であることを意味しません。</li>
+          <li>最終的な適合性は、実車での確認が必要です。</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

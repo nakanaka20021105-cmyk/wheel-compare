@@ -1,0 +1,398 @@
+/* =========================================================
+   ホイール比較 — スタイル
+   色はすべて :root の変数（トークン）で管理し、ダークモードで切り替える。
+   ========================================================= */
+
+:root {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --text: #16181d;
+  --text-muted: #5b6270;
+  --border: #d9dde4;
+  --focus: #1d4ed8;
+
+  --current: #5b6270;          /* 現在（灰） */
+  --current-fill: rgba(91, 98, 112, 0.42);
+  --candidate: #2563eb;        /* 交換候補（青） */
+  --candidate-fill: rgba(37, 99, 235, 0.45);
+  --tire-current-fill: rgba(91, 98, 112, 0.12);
+  --tire-candidate-fill: rgba(37, 99, 235, 0.10);
+  --tire-stroke: #9aa1ad;
+
+  --hub: #16181d;
+  --fender: #c2410c;
+  --part: #7c3aed;
+  --diagram-bg: #fbfbfc;
+
+  --error: #b42318;
+  --error-bg: #fef3f2;
+  --level-interference: #b42318;
+  --level-interference-bg: #fef3f2;
+  --level-verySmall: #a15c07;
+  --level-verySmall-bg: #fffaeb;
+  --level-ok: #475467;
+  --level-ok-bg: #f2f4f7;
+
+  --radius: 10px;
+  --gap: 16px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115;
+    --surface: #181b21;
+    --surface-2: #1f232b;
+    --text: #e8eaee;
+    --text-muted: #a3aab6;
+    --border: #323844;
+    --focus: #8ab4ff;
+
+    --current: #a3aab6;
+    --current-fill: rgba(163, 170, 182, 0.40);
+    --candidate: #6b9bff;
+    --candidate-fill: rgba(107, 155, 255, 0.45);
+    --tire-current-fill: rgba(163, 170, 182, 0.12);
+    --tire-candidate-fill: rgba(107, 155, 255, 0.11);
+    --tire-stroke: #6b7280;
+
+    --hub: #e8eaee;
+    --fender: #fb923c;
+    --part: #b794f6;
+    --diagram-bg: #14171c;
+
+    --error: #ff8a80;
+    --error-bg: #2a1614;
+    --level-interference: #ff8a80;
+    --level-interference-bg: #2a1614;
+    --level-verySmall: #fbbf24;
+    --level-verySmall-bg: #2a2210;
+    --level-ok: #c3c9d3;
+    --level-ok-bg: #232831;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --surface: #181b21; --surface-2: #1f232b; --text: #e8eaee; --text-muted: #a3aab6;
+  --border: #323844; --focus: #8ab4ff; --current: #a3aab6; --current-fill: rgba(163, 170, 182, 0.40);
+  --candidate: #6b9bff; --candidate-fill: rgba(107, 155, 255, 0.45);
+  --tire-current-fill: rgba(163, 170, 182, 0.12); --tire-candidate-fill: rgba(107, 155, 255, 0.11);
+  --tire-stroke: #6b7280; --hub: #e8eaee; --fender: #fb923c; --part: #b794f6; --diagram-bg: #14171c;
+  --error: #ff8a80; --error-bg: #2a1614; --level-interference: #ff8a80; --level-interference-bg: #2a1614;
+  --level-verySmall: #fbbf24; --level-verySmall-bg: #2a2210; --level-ok: #c3c9d3; --level-ok-bg: #232831;
+}
+
+/* ---------- 基本 ---------- */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+}
+
+h1, h2, h3 { line-height: 1.3; }
+h2 { font-size: 1.1rem; margin: 0 0 12px; display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+h3 { font-size: 0.95rem; margin: 20px 0 8px; }
+
+:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+.visually-hidden {
+  position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.note { color: var(--text-muted); font-size: 0.85rem; margin: 8px 0 0; }
+
+/* ---------- ヘッダー ---------- */
+.site-header { max-width: 1200px; margin: 0 auto; padding: 20px 16px 4px; }
+.site-header h1 { font-size: 1.4rem; margin: 0; }
+.site-header p { margin: 4px 0 0; color: var(--text-muted); font-size: 0.9rem; }
+
+/* ---------- レイアウト（スマホ: 1列 / PC: 入力 | 結果+図） ---------- */
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 16px 32px;
+  display: grid;
+  gap: var(--gap);
+}
+.output { display: grid; gap: var(--gap); min-width: 0; }
+
+@media (min-width: 960px) {
+  .layout { grid-template-columns: minmax(360px, 440px) minmax(0, 1fr); align-items: start; }
+  /* 入力パネルはスクロールしても見える位置に固定 */
+  .input-panel { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  min-width: 0;
+}
+
+.step {
+  display: inline-grid; place-items: center;
+  width: 1.5em; height: 1.5em; border-radius: 50%;
+  background: var(--text); color: var(--surface);
+  font-size: 0.8rem; align-self: center;
+}
+.heading-sub { font-size: 0.8rem; font-weight: normal; color: var(--text-muted); }
+
+/* ---------- 入力 ---------- */
+.compare-grid {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px 10px;
+  align-items: start;
+}
+.compare-head { font-weight: bold; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
+.head-current { color: var(--current); }
+.head-candidate { color: var(--candidate); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot-current { background: var(--current); }
+.dot-candidate { background: var(--candidate); }
+
+.row-label { font-size: 0.85rem; font-weight: bold; padding-top: 9px; white-space: nowrap; }
+.cell { min-width: 0; }
+
+/* スマホ幅: 項目名を上の行に出して、現在・交換候補の入力欄を広く使う */
+@media (max-width: 519px) {
+  .compare-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 4px 10px; }
+  .compare-grid > .compare-head:first-child { display: none; }
+  .compare-grid > .row-label { grid-column: 1 / -1; padding-top: 8px; display: flex; align-items: baseline; gap: 8px; }
+  .compare-grid > .row-label .row-label-sub { display: inline; }
+}
+
+input[type="text"], input[type="number"] {
+  width: 100%;
+  font-size: 1rem;            /* 16px 未満だと iOS で自動ズームされる */
+  padding: 7px 9px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+input[aria-invalid="true"] { border: 2px solid var(--error); background: var(--error-bg); }
+
+.input-unit { position: relative; }
+.input-unit input { padding-right: 2.6em; }
+.input-unit .unit {
+  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 0.85rem; pointer-events: none;
+}
+
+/* 数値入力の上下ボタンは幅を取るので隠す（↑↓キーでの増減はそのまま使える） */
+input[type="number"] { -moz-appearance: textfield; appearance: textfield; }
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+.row-label-sub { display: block; font-size: 0.68rem; font-weight: normal; color: var(--text-muted); line-height: 1.2; }
+
+/* タイヤサイズ: [205] / [50] R [17]。狭いときは「R [17]」を次の行へ折り返す */
+.tire-size { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 3px; }
+.tire-part { display: inline-flex; align-items: center; gap: 3px; flex: none; }
+.tire-size input { width: 2.9em; padding: 7px 2px; text-align: center; }
+.tire-size input[data-field="tireAspect"], .tire-size input[data-field="tireRimInch"] { width: 2.3em; }
+.tire-sep { font-weight: bold; color: var(--text-muted); }
+
+/* 符号 + 数値: [+|−][ 48 ] mm */
+.signed-input { display: flex; align-items: stretch; gap: 4px; }
+.signed-input input[type="text"] { flex: 1 1 auto; min-width: 0; text-align: right; }
+.unit-after { color: var(--text-muted); font-size: 0.85rem; flex: none; align-self: center; }
+.sign-toggle {
+  display: inline-flex; flex: none; border: 1px solid var(--border); border-radius: 6px; overflow: hidden;
+  position: relative;
+}
+.sign-toggle input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; pointer-events: none; }
+.sign-toggle label {
+  display: grid; place-items: center; width: 1.9em; min-height: 2.2rem; cursor: pointer; user-select: none;
+  font-weight: bold; font-size: 1.05rem; color: var(--text-muted); background: var(--surface);
+}
+.sign-toggle label + input + label { border-left: 1px solid var(--border); }
+.sign-toggle input:checked + label { background: var(--text); color: var(--surface); }
+.sign-toggle input:focus-visible + label { outline: 3px solid var(--focus); outline-offset: -3px; }
+
+.error { color: var(--error); font-size: 0.8rem; margin: 4px 0 0; line-height: 1.4; }
+.error:empty { display: none; }
+.hint { color: var(--text-muted); font-size: 0.75rem; margin: 3px 0 0; }
+.hint:empty { display: none; }
+
+.clearance-fields { border: 0; padding: 0; margin: 20px 0 0; min-width: 0; }
+.clearance-fields legend { font-weight: bold; font-size: 0.95rem; padding: 0; }
+.optional {
+  font-size: 0.7rem; font-weight: normal; color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 8px; margin-left: 4px;
+}
+.clearance-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; margin-top: 8px; }
+.clearance-grid > .cell > label { display: block; font-weight: bold; font-size: 0.85rem; margin-bottom: 4px; }
+.label-sub { display: block; font-weight: normal; font-size: 0.75rem; color: var(--text-muted); line-height: 1.3; min-height: 2.6em; } /* 2行に折り返しても入力欄の高さをそろえる */
+.range-note { margin-top: 16px; }
+
+/* ---------- 結果 ---------- */
+.error-box {
+  color: var(--error); background: var(--error-bg);
+  border: 1px solid var(--error); border-radius: 8px; padding: 10px 12px; margin: 0;
+}
+
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+@media (min-width: 1180px) {
+  .summary-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+.card {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.card dt { font-size: 0.8rem; color: var(--text-muted); font-weight: bold; }
+.card dd { margin: 0; }
+.card-value {
+  font-size: 1.6rem; font-weight: bold; line-height: 1.2; margin-top: 2px !important;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.card-value .unit-small { font-size: 0.9rem; font-weight: normal; margin-left: 2px; }
+.card-sub { font-size: 0.8rem; color: var(--text-muted); }
+
+.tag {
+  display: inline-block; font-size: 0.68rem; font-weight: normal; color: var(--text-muted);
+  border: 1px solid var(--border); border-radius: 999px; padding: 0 6px; margin-left: 6px;
+  vertical-align: middle; line-height: 1.5;
+}
+
+.clearance-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 0; }
+.clearance-cards .card-value { font-size: 1.3rem; }
+.level {
+  display: inline-block; margin-top: 6px; padding: 2px 8px; border-radius: 6px;
+  font-size: 0.8rem; font-weight: bold; line-height: 1.5;
+}
+.level-interference { color: var(--level-interference); background: var(--level-interference-bg); border: 1px solid var(--level-interference); }
+.level-verySmall { color: var(--level-verySmall); background: var(--level-verySmall-bg); border: 1px solid var(--level-verySmall); }
+.level-ok { color: var(--level-ok); background: var(--level-ok-bg); border: 1px solid var(--border); }
+
+/* ---------- 断面図 ---------- */
+.diagram-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; }
+.diagram-header h2 { margin: 0; }
+.scale-badge {
+  margin: 0; font-size: 0.85rem; font-weight: bold; font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; background: var(--surface-2);
+}
+.scale-badge:empty { display: none; }
+.scale-note { color: var(--text-muted); font-size: 0.8rem; margin: 6px 0 8px; }
+
+#diagram-wrap { width: 100%; }
+#diagram {
+  display: block; width: 100%; height: auto;
+  background: var(--diagram-bg); border: 1px solid var(--border); border-radius: 8px;
+}
+
+#diagram .d-label { font-size: 13px; fill: var(--text); }
+#diagram .d-dir { fill: var(--text-muted); }
+#diagram .d-dim-label { font-weight: bold; }
+#diagram .d-tire-note { fill: var(--text-muted); }
+
+/* タイヤ（模式）: ごく薄い塗りと点線。主役ではない */
+#diagram .d-current-tire { fill: var(--tire-current-fill); stroke: var(--tire-stroke); stroke-width: 1.25; stroke-dasharray: 4 3; stroke-linejoin: round; }
+#diagram .d-candidate-tire { fill: var(--tire-candidate-fill); stroke: var(--tire-stroke); stroke-width: 1.25; stroke-dasharray: 4 3; stroke-linejoin: round; }
+
+/* ホイール（リム）: 主役。現在=灰の破線、交換候補=青の実線 */
+#diagram .d-current-rim { fill: var(--current-fill); }
+#diagram .d-candidate-rim { fill: var(--candidate-fill); }
+#diagram .d-current-outline { fill: none; stroke: var(--current); stroke-width: 2.5; stroke-dasharray: 7 4; stroke-linejoin: round; }
+#diagram .d-candidate-outline { fill: none; stroke: var(--candidate); stroke-width: 2.5; stroke-linejoin: round; }
+
+#diagram .d-ground { stroke: var(--text); stroke-width: 2; }
+#diagram .d-hub, #diagram .d-hub-ext { stroke: var(--hub); stroke-width: 2; }
+
+/* リム中心線（一点鎖線）とリム幅・ET の寸法線。現在=灰、交換候補=青 */
+#diagram .d-current-center { stroke: var(--current); stroke-width: 1.25; stroke-dasharray: 10 3 2 3; }
+#diagram .d-candidate-center { stroke: var(--candidate); stroke-width: 1.25; stroke-dasharray: 10 3 2 3; }
+#diagram .d-current-dim { stroke: var(--current); stroke-width: 1.5; }
+#diagram .d-candidate-dim { stroke: var(--candidate); stroke-width: 1.5; }
+#diagram .d-current-ext { stroke: var(--current); stroke-width: 1; stroke-dasharray: 2 3; }
+#diagram .d-candidate-ext { stroke: var(--candidate); stroke-width: 1; stroke-dasharray: 2 3; }
+/* ET はリム幅より強調する（太い矢印・大きめの太字） */
+#diagram .d-et, #diagram .d-et-head, #diagram .d-et-tick, #diagram .d-sample-et { stroke-width: 2.5; stroke-linecap: round; }
+#diagram .d-current-leader { stroke: var(--current); stroke-width: 1; stroke-dasharray: 1 3; }
+#diagram .d-candidate-leader { stroke: var(--candidate); stroke-width: 1; stroke-dasharray: 1 3; }
+#diagram .d-rimw-label { font-size: 12px; font-weight: 600; }
+#diagram .d-et-label { font-size: 13px; font-weight: bold; }
+#diagram .d-et-sub { font-size: 11px; }
+#diagram .d-current-label { fill: var(--current); }
+#diagram .d-candidate-label { fill: var(--candidate); }
+#diagram .d-fender { stroke: var(--fender); stroke-width: 2; stroke-dasharray: 8 4; }
+#diagram .d-part { stroke: var(--part); stroke-width: 2; stroke-dasharray: 8 4; }
+#diagram .d-fender-label { fill: var(--fender); font-weight: bold; }
+#diagram .d-part-label { fill: var(--part); font-weight: bold; }
+#diagram .d-dim { stroke: var(--text); stroke-width: 1.5; }
+#diagram .d-dim-ext { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 2 3; }
+
+.legend {
+  list-style: none; padding: 0; margin: 10px 0 0;
+  display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem;
+}
+.legend li { display: flex; align-items: center; }
+.legend li[hidden] { display: none; }
+.swatch { display: inline-block; width: 20px; height: 12px; margin-right: 6px; flex: none; border-radius: 2px; }
+.swatch-current { background: var(--current-fill); border: 2px dashed var(--current); }
+.swatch-candidate { background: var(--candidate-fill); border: 2px solid var(--candidate); }
+.swatch-tire { background: var(--tire-candidate-fill); border: 1px dotted var(--tire-stroke); }
+.swatch-hub { height: 0; border-top: 2px solid var(--hub); border-radius: 0; }
+.swatch-center {
+  height: 2px; border-radius: 0; background: repeating-linear-gradient(90deg, var(--text-muted) 0 7px, transparent 7px 9px, var(--text-muted) 9px 11px, transparent 11px 13px);
+}
+.swatch-et {
+  height: 2px; border-radius: 0; position: relative; background: var(--text-muted);
+}
+.swatch-et::after {
+  content: ""; position: absolute; right: -1px; top: -4px;
+  border-left: 7px solid var(--text-muted); border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+}
+.swatch-fender { height: 0; border-top: 3px dashed var(--fender); border-radius: 0; }
+.swatch-part { height: 0; border-top: 3px dashed var(--part); border-radius: 0; }
+
+/* ---------- 詳細（折りたたみ） ---------- */
+.details-panel { padding: 4px 16px; }
+.details { border-bottom: 1px solid var(--border); }
+.details:last-child { border-bottom: 0; }
+.details summary {
+  cursor: pointer; font-weight: bold; padding: 12px 0; font-size: 0.95rem;
+  list-style-position: inside;
+}
+.details[open] summary { padding-bottom: 8px; }
+.details .result-table { margin-bottom: 14px; }
+
+.table-scroll { overflow-x: auto; }
+.result-table { border-collapse: collapse; width: 100%; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.result-table th,
+.result-table td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+.result-table thead th { color: var(--text-muted); font-weight: bold; font-size: 0.8rem; }
+.result-table tbody th { font-weight: normal; }
+
+/* ---------- 注意事項 ---------- */
+.notes h2 { font-size: 0.95rem; }
+.notes ul { margin: 0; padding-left: 1.2em; font-size: 0.82rem; color: var(--text-muted); }
+.notes li + li { margin-top: 4px; }
+
+/* ---------- スマホ向けの調整 ---------- */
+@media (max-width: 480px) {
+  .site-header { padding-top: 14px; }
+  .site-header h1 { font-size: 1.2rem; }
+  .site-header p { font-size: 0.8rem; }
+  .panel { padding: 12px; }
+  .card { padding: 8px 10px; }
+  .card-value { font-size: 1.35rem; }
+  .card dt { font-size: 0.75rem; }
+  .compare-grid { gap: 6px 8px; }
+  .legend { font-size: 0.75rem; gap: 2px 10px; }
+}
