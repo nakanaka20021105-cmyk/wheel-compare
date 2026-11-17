@@ -14,12 +14,15 @@ import {
   describeOuterEdgeChange,
   describeInnerEdgeChange,
 } from './format.js';
+import { SELECT_OPTIONS, stepOptionIndex } from './selectOptions.js';
 
 const form = document.getElementById('wheel-form');
-/** すべての入力（符号のラジオボタンを含む） */
-const inputs = form.querySelectorAll('input[data-group][data-field]');
-/** 文字・数値の入力欄（エラー表示の対象。ラジオボタンは除く） */
+/** すべての入力（符号のラジオボタン・選択式の select を含む） */
+const inputs = form.querySelectorAll('input[data-group][data-field], select[data-group][data-field]');
+/** 値の入力欄（エラー表示の対象。ラジオボタンは除く） */
 const valueInputs = [...inputs].filter((input) => input.type !== 'radio');
+/** 選択式の欄の横にある －／＋ ボタン */
+const stepButtons = form.querySelectorAll('button[data-step-target]');
 const diagramSvg = document.getElementById('diagram');
 const diagramWrap = document.getElementById('diagram-wrap');
 
@@ -202,7 +205,10 @@ function drawDiagram(result) {
 // ---------------------------------------------------------------
 
 function update() {
-  const outcome = compareWheels(readInputs());
+  const values = readInputs();
+  updateStepButtons();
+  showTireSummary(values);
+  const outcome = compareWheels(values);
 
   showFieldErrors(outcome.ok ? null : outcome.errors);
 
@@ -225,12 +231,55 @@ function showInputRangeNote() {
   const tireRange = (l) => `${l.min}〜${l.max}${l.unit}（${l.step}${l.unit}刻み）`;
   setText(
     'input-range-note',
-    `計算できる範囲: リム幅 ${formatRange(rimWidthJ, 'J')}、`
+    `計算できる範囲: リム幅 ${formatRange(rimWidthJ, 'J')}（0.5J刻み）、`
       + `オフセット ${formatRange(offsetMm, 'mm')}、`
       + `タイヤ幅 ${tireRange(t.width)}、扁平率 ${tireRange(t.aspect)}、リム径 ${tireRange(t.rimInch)}、`
       + `クリアランス ${formatRange(clearanceMm, 'mm')}。`
       + 'この範囲は計算できる範囲であり、装着可能・安全・合法であることを意味しません。',
   );
+}
+
+// ---------------------------------------------------------------
+// 選択式の欄（リム幅・タイヤ幅・扁平率・リム径）
+// ---------------------------------------------------------------
+
+/** select に選択肢を入れる（選択肢は selectOptions.js で calc.js の範囲から作る） */
+function fillSelectOptions() {
+  for (const select of form.querySelectorAll('select[data-field]')) {
+    const options = SELECT_OPTIONS[select.dataset.field];
+    if (!options) continue;
+    select.replaceChildren(...options.map(({ value, label }) => new Option(label, value)));
+  }
+}
+
+/** －／＋ ボタン: 選択肢を 1 つ前／後ろへ動かし、手で選んだときと同じ change イベントを出す */
+function onStepButtonClick(event) {
+  const button = event.target.closest('button[data-step-target]');
+  if (!button) return;
+  const select = document.getElementById(button.dataset.stepTarget);
+  const next = stepOptionIndex(select.options.length, select.selectedIndex, Number(button.dataset.step));
+  if (next === select.selectedIndex) return;
+  select.selectedIndex = next;
+  select.dispatchEvent(new Event('change', { bubbles: true })); // → update() で即時に再計算
+}
+
+/** 端の選択肢を選んでいるときは、それ以上進めないボタンを押せなくする */
+function updateStepButtons() {
+  for (const button of stepButtons) {
+    const select = document.getElementById(button.dataset.stepTarget);
+    const last = select.options.length - 1;
+    button.disabled = Number(button.dataset.step) < 0
+      ? select.selectedIndex <= 0
+      : select.selectedIndex >= last;
+  }
+}
+
+/** 選んだタイヤサイズを「205/50R17」の形で表示する（確認用） */
+function showTireSummary(values) {
+  for (const group of ['current', 'candidate']) {
+    const v = values[group];
+    setText(`${group}-tire-summary`, `${v.tireWidth}/${v.tireAspect}R${v.tireRimInch}`);
+  }
 }
 
 // "input" イベントは 1文字入力するたびに発生する → 即時に再計算
@@ -239,6 +288,7 @@ form.addEventListener('input', update);
 form.addEventListener('change', update);
 // Enter キーでページが再読み込みされないようにする
 form.addEventListener('submit', (event) => event.preventDefault());
+form.addEventListener('click', onStepButtonClick);
 // 画面幅が変わったら図だけ描き直す
 window.addEventListener('resize', () => {
   if (lastResult && !document.getElementById('diagram-section').hidden) drawDiagram(lastResult);
@@ -253,7 +303,8 @@ function openDetailsOnWideScreen() {
 
 /**
  * 初期値を calc.js の DEFAULT_INPUTS から入れる（HTML の value と二重管理しないため）。
- * 符号はラジオボタンの checked、それ以外は value に入れる。
+ * 符号はラジオボタンの checked、それ以外は value に入れる
+ * （select は同じ value の選択肢が選ばれる。例: リム幅 7 → 「7.0」）。
  */
 function applyDefaults() {
   for (const input of inputs) {
@@ -264,6 +315,7 @@ function applyDefaults() {
   }
 }
 
+fillSelectOptions();
 applyDefaults();
 showInputRangeNote();
 openDetailsOnWideScreen();

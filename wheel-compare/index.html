@@ -28,24 +28,25 @@
           <div class="compare-head head-candidate" aria-hidden="true"><span class="dot dot-candidate"></span>交換候補</div>
 
           <!-- リム幅 -->
-          <div class="row-label" aria-hidden="true">リム幅</div>
+          <!-- 選択式の欄: [－][ 選択 ▼ ][＋]。選択肢は main.js が selectOptions.js から入れる -->
+          <div class="row-label" aria-hidden="true">リム幅<span class="row-label-sub">J</span></div>
           <div class="cell">
             <label class="visually-hidden" for="current-rimWidthJ">現在のリム幅（J）</label>
-            <div class="input-unit">
-              <input id="current-rimWidthJ" data-group="current" data-field="rimWidthJ"
-                     type="text" inputmode="decimal" value="7" autocomplete="off"
-                     aria-describedby="current-rimWidthJ-error">
-              <span class="unit" aria-hidden="true">J</span>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="current-rimWidthJ" data-step="-1" aria-label="現在のリム幅を1段階小さくする">−</button>
+              <select id="current-rimWidthJ" data-group="current" data-field="rimWidthJ"
+                      aria-describedby="current-rimWidthJ-error"></select>
+              <button type="button" class="step-btn" data-step-target="current-rimWidthJ" data-step="1" aria-label="現在のリム幅を1段階大きくする">＋</button>
             </div>
             <p class="error" id="current-rimWidthJ-error"></p>
           </div>
           <div class="cell">
             <label class="visually-hidden" for="candidate-rimWidthJ">交換候補のリム幅（J）</label>
-            <div class="input-unit">
-              <input id="candidate-rimWidthJ" data-group="candidate" data-field="rimWidthJ"
-                     type="text" inputmode="decimal" value="8" autocomplete="off"
-                     aria-describedby="candidate-rimWidthJ-error">
-              <span class="unit" aria-hidden="true">J</span>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="candidate-rimWidthJ" data-step="-1" aria-label="交換候補のリム幅を1段階小さくする">−</button>
+              <select id="candidate-rimWidthJ" data-group="candidate" data-field="rimWidthJ"
+                      aria-describedby="candidate-rimWidthJ-error"></select>
+              <button type="button" class="step-btn" data-step-target="candidate-rimWidthJ" data-step="1" aria-label="交換候補のリム幅を1段階大きくする">＋</button>
             </div>
             <p class="error" id="candidate-rimWidthJ-error"></p>
           </div>
@@ -89,58 +90,79 @@
             <p class="error" id="candidate-offsetMm-error"></p>
           </div>
 
-          <!-- タイヤサイズ（幅 / 扁平率 R リム径） -->
-          <div class="row-label" aria-hidden="true">タイヤ<span class="row-label-sub">幅/扁平率R径</span></div>
+          <!-- タイヤ幅 -->
+          <div class="row-label" aria-hidden="true">タイヤ幅<span class="row-label-sub">mm</span></div>
           <div class="cell">
-            <div class="tire-size" role="group" aria-label="現在のタイヤサイズ">
-              <span class="tire-part">
-                <label class="visually-hidden" for="current-tireWidth">現在のタイヤ幅（mm、105〜405、10mm刻み）</label>
-                <input id="current-tireWidth" data-group="current" data-field="tireWidth"
-                       type="number" inputmode="numeric" min="105" max="405" step="10" value="205"
-                       autocomplete="off" aria-describedby="current-tireWidth-error">
-                <span class="tire-sep" aria-hidden="true">/</span>
-                <label class="visually-hidden" for="current-tireAspect">現在の扁平率（%、5〜90、5%刻み）</label>
-                <input id="current-tireAspect" data-group="current" data-field="tireAspect"
-                       type="number" inputmode="numeric" min="5" max="90" step="5" value="50"
-                       autocomplete="off" aria-describedby="current-tireAspect-error">
-              </span>
-              <span class="tire-part">
-                <span class="tire-sep" aria-hidden="true">R</span>
-                <label class="visually-hidden" for="current-tireRimInch">現在のリム径（インチ、7〜35）</label>
-                <input id="current-tireRimInch" data-group="current" data-field="tireRimInch"
-                       type="number" inputmode="numeric" min="7" max="35" step="1" value="17"
-                       autocomplete="off" aria-describedby="current-tireRimInch-error">
-              </span>
+            <label class="visually-hidden" for="current-tireWidth">現在のタイヤ幅（mm）</label>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="current-tireWidth" data-step="-1" aria-label="現在のタイヤ幅を1段階小さくする">−</button>
+              <select id="current-tireWidth" data-group="current" data-field="tireWidth"
+                      aria-describedby="current-tireWidth-error"></select>
+              <button type="button" class="step-btn" data-step-target="current-tireWidth" data-step="1" aria-label="現在のタイヤ幅を1段階大きくする">＋</button>
             </div>
             <p class="error" id="current-tireWidth-error"></p>
+          </div>
+          <div class="cell">
+            <label class="visually-hidden" for="candidate-tireWidth">交換候補のタイヤ幅（mm）</label>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="candidate-tireWidth" data-step="-1" aria-label="交換候補のタイヤ幅を1段階小さくする">−</button>
+              <select id="candidate-tireWidth" data-group="candidate" data-field="tireWidth"
+                      aria-describedby="candidate-tireWidth-error"></select>
+              <button type="button" class="step-btn" data-step-target="candidate-tireWidth" data-step="1" aria-label="交換候補のタイヤ幅を1段階大きくする">＋</button>
+            </div>
+            <p class="error" id="candidate-tireWidth-error"></p>
+          </div>
+
+          <!-- 扁平率 -->
+          <div class="row-label" aria-hidden="true">扁平率<span class="row-label-sub">%</span></div>
+          <div class="cell">
+            <label class="visually-hidden" for="current-tireAspect">現在の扁平率（%）</label>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="current-tireAspect" data-step="-1" aria-label="現在の扁平率を1段階小さくする">−</button>
+              <select id="current-tireAspect" data-group="current" data-field="tireAspect"
+                      aria-describedby="current-tireAspect-error"></select>
+              <button type="button" class="step-btn" data-step-target="current-tireAspect" data-step="1" aria-label="現在の扁平率を1段階大きくする">＋</button>
+            </div>
             <p class="error" id="current-tireAspect-error"></p>
+          </div>
+          <div class="cell">
+            <label class="visually-hidden" for="candidate-tireAspect">交換候補の扁平率（%）</label>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="candidate-tireAspect" data-step="-1" aria-label="交換候補の扁平率を1段階小さくする">−</button>
+              <select id="candidate-tireAspect" data-group="candidate" data-field="tireAspect"
+                      aria-describedby="candidate-tireAspect-error"></select>
+              <button type="button" class="step-btn" data-step-target="candidate-tireAspect" data-step="1" aria-label="交換候補の扁平率を1段階大きくする">＋</button>
+            </div>
+            <p class="error" id="candidate-tireAspect-error"></p>
+          </div>
+
+          <!-- リム径 -->
+          <div class="row-label" aria-hidden="true">リム径<span class="row-label-sub">インチ</span></div>
+          <div class="cell">
+            <label class="visually-hidden" for="current-tireRimInch">現在のリム径（インチ）</label>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="current-tireRimInch" data-step="-1" aria-label="現在のリム径を1段階小さくする">−</button>
+              <select id="current-tireRimInch" data-group="current" data-field="tireRimInch"
+                      aria-describedby="current-tireRimInch-error"></select>
+              <button type="button" class="step-btn" data-step-target="current-tireRimInch" data-step="1" aria-label="現在のリム径を1段階大きくする">＋</button>
+            </div>
             <p class="error" id="current-tireRimInch-error"></p>
           </div>
           <div class="cell">
-            <div class="tire-size" role="group" aria-label="交換候補のタイヤサイズ">
-              <span class="tire-part">
-                <label class="visually-hidden" for="candidate-tireWidth">交換候補のタイヤ幅（mm、105〜405、10mm刻み）</label>
-                <input id="candidate-tireWidth" data-group="candidate" data-field="tireWidth"
-                       type="number" inputmode="numeric" min="105" max="405" step="10" value="205"
-                       autocomplete="off" aria-describedby="candidate-tireWidth-error">
-                <span class="tire-sep" aria-hidden="true">/</span>
-                <label class="visually-hidden" for="candidate-tireAspect">交換候補の扁平率（%、5〜90、5%刻み）</label>
-                <input id="candidate-tireAspect" data-group="candidate" data-field="tireAspect"
-                       type="number" inputmode="numeric" min="5" max="90" step="5" value="50"
-                       autocomplete="off" aria-describedby="candidate-tireAspect-error">
-              </span>
-              <span class="tire-part">
-                <span class="tire-sep" aria-hidden="true">R</span>
-                <label class="visually-hidden" for="candidate-tireRimInch">交換候補のリム径（インチ、7〜35）</label>
-                <input id="candidate-tireRimInch" data-group="candidate" data-field="tireRimInch"
-                       type="number" inputmode="numeric" min="7" max="35" step="1" value="17"
-                       autocomplete="off" aria-describedby="candidate-tireRimInch-error">
-              </span>
+            <label class="visually-hidden" for="candidate-tireRimInch">交換候補のリム径（インチ）</label>
+            <div class="select-stepper">
+              <button type="button" class="step-btn" data-step-target="candidate-tireRimInch" data-step="-1" aria-label="交換候補のリム径を1段階小さくする">−</button>
+              <select id="candidate-tireRimInch" data-group="candidate" data-field="tireRimInch"
+                      aria-describedby="candidate-tireRimInch-error"></select>
+              <button type="button" class="step-btn" data-step-target="candidate-tireRimInch" data-step="1" aria-label="交換候補のリム径を1段階大きくする">＋</button>
             </div>
-            <p class="error" id="candidate-tireWidth-error"></p>
-            <p class="error" id="candidate-tireAspect-error"></p>
             <p class="error" id="candidate-tireRimInch-error"></p>
           </div>
+
+          <!-- 選んだタイヤサイズの表記（確認用） -->
+          <div class="row-label" aria-hidden="true">タイヤ<span class="row-label-sub">サイズ</span></div>
+          <p class="cell tire-summary" id="current-tire-summary" aria-live="polite"></p>
+          <p class="cell tire-summary" id="candidate-tire-summary" aria-live="polite"></p>
         </div>
 
         <fieldset class="clearance-fields">
