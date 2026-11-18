@@ -110,6 +110,27 @@ h3 { font-size: 0.95rem; margin: 20px 0 8px; }
 .site-header h1 { font-size: 1.4rem; margin: 0; }
 .site-header p { margin: 4px 0 0; color: var(--text-muted); font-size: 0.9rem; }
 
+/* サイト全体のブランド（CarCalc Works）。ページ名（h1）より控えめに、上に小さく置く */
+.brand { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 10px; }
+.site-header .brand { padding-bottom: 8px; margin-bottom: 10px; border-bottom: 1px solid var(--border); }
+.brand .brand-name { margin: 0; font-size: 0.95rem; font-weight: bold; letter-spacing: 0.02em; color: var(--text); }
+.brand .brand-tagline { margin: 0; font-size: 0.8rem; color: var(--text-muted); }
+
+/* ---------- フッター（サイト全体） ---------- */
+.site-footer { border-top: 1px solid var(--border); background: var(--surface); margin-top: 8px; }
+.footer-inner {
+  max-width: 1200px; margin: 0 auto; padding: 16px 16px 24px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 24px;
+}
+.footer-links {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 18px; font-size: 0.85rem; color: var(--text-muted);
+}
+/* リンクは下線付き（色だけに頼らない） */
+.footer-links a { color: var(--focus); text-decoration: underline; text-underline-offset: 2px; padding: 6px 0; display: inline-block; }
+.footer-link-note { font-size: 0.8rem; }
+.footer-version { font-variant-numeric: tabular-nums; }
+
 /* ---------- レイアウト（スマホ: 1列 / PC: 入力 | 結果+図） ---------- */
 .layout {
   max-width: 1200px;

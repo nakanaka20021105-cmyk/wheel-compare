@@ -3,16 +3,25 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ホイール比較</title>
-  <meta name="description" content="現在と交換候補のホイールのリム幅・オフセット・タイヤサイズから、ホイール位置と外径の理論上の差を計算します。">
+  <title>ホイール・タイヤサイズ比較｜CarCalc Works</title>
+  <meta name="description" content="ホイール・タイヤ交換時の外側・内側位置、タイヤ外径、クリアランス、速度差などを比較できる無料計算ツール。現在のサイズと交換候補を入力して、数値と断面図で変化を確認できます。">
+  <meta property="og:title" content="ホイール・タイヤサイズ比較｜CarCalc Works">
+  <meta property="og:description" content="ホイール・タイヤ交換時の外側・内側位置、タイヤ外径、クリアランス、速度差などを比較できる無料計算ツール。現在のサイズと交換候補を入力して、数値と断面図で変化を確認できます。">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="CarCalc Works">
+  <meta property="og:locale" content="ja_JP">
   <link rel="stylesheet" href="css/style.css">
-  <!-- type="module" にすると import / export が使える（ローカルサーバー経由で開くこと） -->
   <script type="module" src="js/main.js"></script>
 </head>
 <body>
   <header class="site-header">
-    <h1>ホイール＆オフセット比較</h1>
-    <p>現在と交換候補のホイール位置・タイヤ外径の理論上の差を計算します。</p>
+    <!-- サイト全体のブランド（ページの見出しは h1 のツール名） -->
+    <div class="brand">
+      <p class="brand-name">CarCalc Works</p>
+      <p class="brand-tagline">クルマの計算を、ひとつの場所で。</p>
+    </div>
+    <h1>ホイール・タイヤサイズ比較</h1>
+    <p>現在と交換候補を比較して、ホイール・タイヤの位置、外径、クリアランスの変化を数値と断面図で確認できます。</p>
     <p class="guide-links">はじめての方へ：
       <a href="#guide-about">このツールについて</a>
       <a href="#guide-notation">サイズ表記の読み方</a>
@@ -471,5 +480,19 @@
       </section>
     </div>
   </main>
+
+  <!-- ========== フッター（サイト全体） ========== -->
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="brand">
+        <p class="brand-name">CarCalc Works</p>
+        <p class="brand-tagline">クルマの計算を、ひとつの場所で。</p>
+      </div>
+      <ul class="footer-links">
+        <li><a href="https://github.com/nakanaka20021105-cmyk/wheel-compare/issues">不具合の報告・ご意見</a><span class="footer-link-note">（GitHub Issues）</span></li>
+        <li class="footer-version">Version 1.0</li>
+      </ul>
+    </div>
+  </footer>
 </body>
 </html>
