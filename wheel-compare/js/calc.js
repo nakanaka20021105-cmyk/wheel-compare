@@ -5,9 +5,13 @@
 //   ハブ取付面を 0mm とし、
 //   「外側端」は 車体外側方向をプラス、
 //   「内側端」は 車体内側方向をプラス として距離を表します。
+//
+// 2 つの基準を使い分ける:
+//   ホイール位置の変化 → リム基準（リム幅とオフセットから求めるリムの端）
+//   クリアランスの推定 → タイヤ側面基準（公称タイヤ幅から求めるタイヤ側面の理論上の位置）
 
 import { parseTireSize } from './tireSize.js';
-import { formatRange } from './format.js';
+import { formatRange, roundTo } from './format.js';
 
 export const MM_PER_INCH = 25.4;
 
@@ -41,6 +45,9 @@ export const DEFAULT_INPUTS = {
 
 /** クリアランス判定のしきい値（mm） */
 export const CLEARANCE_THRESHOLD_MM = 5;
+
+/** クリアランスの推定残量を表示・判定する桁数（小数 1 桁 = 0.1mm 単位） */
+export const CLEARANCE_DIGITS = 1;
 
 /** クリアランス判定の結果コードと表示文言 */
 export const CLEARANCE_LEVELS = {
@@ -101,6 +108,22 @@ export function wheelEdges(rimWidthJ, offsetMm) {
 }
 
 /**
+ * ハブ取付面から見たタイヤ側面の理論上の位置（公称タイヤ幅による理論値。実測値ではない）。
+ * 公称タイヤ幅が、タイヤ中心（= リム中心線。ハブ面から外側へ −ET の位置）から
+ * 左右均等に広がると仮定する。リム幅には左右されない。
+ * @param {number} tireWidthMm 公称タイヤ幅
+ * @param {number} offsetMm
+ * @returns {{ outer: number, inner: number }} outer: 外側方向へ mm / inner: 内側方向へ mm
+ */
+export function tireSides(tireWidthMm, offsetMm) {
+  const half = tireWidthMm / 2;
+  return {
+    outer: half - offsetMm,
+    inner: half + offsetMm,
+  };
+}
+
+/**
  * タイヤの理論外径（mm）
  * @param {{ width: number, aspect: number, rimInch: number }} tire
  */
@@ -119,21 +142,49 @@ export function actualSpeed(displaySpeed, diameterRatio) {
 }
 
 /**
- * 候補装着後のクリアランス残量の判定
- * @param {number} remainingMm
+ * 候補装着後のクリアランス残量の判定。
+ * 画面に表示するのと同じ 0.1mm 単位の値（roundClearance() の結果）を渡す。
+ * 表示が「5.0」なら必ず「非常に小さい」、「0.0」なら必ず「非常に小さい」になる。
+ * @param {number} roundedMm 0.1mm 単位に丸めた推定残量
  * @returns {'interference' | 'verySmall' | 'ok'}
  */
-export function judgeClearance(remainingMm) {
-  if (remainingMm < 0) return 'interference';
-  if (remainingMm <= CLEARANCE_THRESHOLD_MM) return 'verySmall';
+export function judgeClearance(roundedMm) {
+  if (roundedMm < 0) return 'interference';
+  if (roundedMm <= CLEARANCE_THRESHOLD_MM) return 'verySmall';
   return 'ok';
+}
+
+/**
+ * 推定残量を表示・判定用に 0.1mm 単位へ丸める。
+ * 浮動小数点の誤差（例: 本来 0 の残量が −3.6e-15 になる）もこの丸めで取り除かれるので、
+ * 判定の前に別の誤差補正はしない。内部の計算値（remainingMm）は丸めずに残す。
+ * @param {number} remainingMm
+ */
+export function roundClearance(remainingMm) {
+  return roundTo(remainingMm, CLEARANCE_DIGITS);
 }
 
 // ---------------------------------------------------------------
 // 入力検証
 // ---------------------------------------------------------------
 
-function validateRange(value, limits, label, unit, { required }) {
+/** オフセット・クリアランスの入力で使える小数の桁数（0.1mm 単位） */
+export const INPUT_DECIMALS_MM = 1;
+
+/**
+ * 小数第 digits 位までの値か（例: digits = 1 なら 45.5 は可、45.55 は不可）。
+ * 45.5 × 10 = 455.00000000000006 のような計算誤差は許す。
+ */
+export function hasAtMostDecimals(value, digits) {
+  const scaled = value * 10 ** digits;
+  return Math.abs(scaled - Math.round(scaled)) < 1e-6;
+}
+
+function decimalsError(label) {
+  return `${label}は小数第${INPUT_DECIMALS_MM}位まで（0.1mm 単位）で入力してください`;
+}
+
+function validateRange(value, limits, label, unit, { required, decimals }) {
   if (value === null) {
     return required ? `${label}を入力してください` : null;
   }
@@ -142,6 +193,9 @@ function validateRange(value, limits, label, unit, { required }) {
   }
   if (value < limits.min || value > limits.max) {
     return `${label}は ${formatRange(limits, unit)} の範囲で入力してください`;
+  }
+  if (decimals !== undefined && !hasAtMostDecimals(value, decimals)) {
+    return decimalsError(label);
   }
   return null;
 }
@@ -229,6 +283,10 @@ function validateSignedInput(sign, absInput, limits, label, { required }) {
   if (r.value < limits.min || r.value > limits.max) {
     return { error: `${label}は ${rangeText} の範囲で入力してください` };
   }
+  // 小数は第 1 位まで（0.1mm 単位）。2 桁以上は勝手に丸めずエラーにする
+  if (!hasAtMostDecimals(r.value, INPUT_DECIMALS_MM)) {
+    return { error: decimalsError(label) };
+  }
   return { value: r.value };
 }
 
@@ -256,7 +314,9 @@ export function validateWheelInput(input = {}) {
     else offsetMm = r.value;
   } else {
     offsetMm = parseNumberInput(input.offsetMm);
-    const offsetError = validateRange(offsetMm, INPUT_LIMITS.offsetMm, 'オフセット', 'mm', { required: true });
+    const offsetError = validateRange(offsetMm, INPUT_LIMITS.offsetMm, 'オフセット', 'mm', {
+      required: true, decimals: INPUT_DECIMALS_MM,
+    });
     if (offsetError) errors.offsetMm = offsetError;
   }
 
@@ -295,7 +355,9 @@ export function validateClearanceInput(input = {}) {
       else value[key] = r.value;
     } else {
       const n = parseNumberInput(input[key]);
-      const error = validateRange(n, INPUT_LIMITS.clearanceMm, label, 'mm', { required: false });
+      const error = validateRange(n, INPUT_LIMITS.clearanceMm, label, 'mm', {
+        required: false, decimals: INPUT_DECIMALS_MM,
+      });
       if (error) errors[key] = error;
       else value[key] = n;
     }
@@ -310,21 +372,26 @@ export function validateClearanceInput(input = {}) {
 // ---------------------------------------------------------------
 
 /**
- * @param {number | null} currentMm 現在のクリアランス
- * @param {number} changeMm ホイール端の変化量（部品に近づく方向がプラス）
- * @param {number} currentEdgeMm 現在のホイール端の位置（ハブ取付面から）
+ * 現在のクリアランス（タイヤ側面基準）から、交換候補装着後の推定残量を求める。
+ * @param {number | null} currentMm 現在のクリアランス（現在のタイヤ側面から部品まで）
+ * @param {number} sideChangeMm タイヤ側面の変化量（部品に近づく方向がプラス）
+ * @param {number} currentSideMm 現在のタイヤ側面の位置（ハブ取付面から）
  */
-function clearanceResult(currentMm, changeMm, currentEdgeMm) {
+function clearanceResult(currentMm, sideChangeMm, currentSideMm) {
   if (currentMm === null) return null; // 未入力なら計算しない
-  const remainingMm = currentMm - changeMm;
-  const level = judgeClearance(remainingMm);
+  const remainingMm = currentMm - sideChangeMm;      // 内部計算値（丸めない）
+  const remainingRoundedMm = roundClearance(remainingMm); // 表示・判定に使う同一の値
+  const level = judgeClearance(remainingRoundedMm);
   return {
     currentMm,
+    sideChangeMm,
     remainingMm,
+    remainingRoundedMm,
     level,
     label: CLEARANCE_LEVELS[level],
     // フェンダー等（外側）／最寄り部品（内側）の位置。ハブ取付面からの距離（図で使う）
-    positionMm: currentEdgeMm + currentMm,
+    // = 現在のタイヤ側面（理論値）＋ 現在のクリアランス
+    positionMm: currentSideMm + currentMm,
   };
 }
 
@@ -336,6 +403,8 @@ function wheelDetails(wheel) {
     rimWidthMm: rimWidthMm(wheel.rimWidthJ),
     rimDiameterMm: wheel.tire.rimInch * MM_PER_INCH,
     edges: wheelEdges(wheel.rimWidthJ, wheel.offsetMm),
+    // タイヤ側面の理論上の位置（公称幅がタイヤ中心から左右均等に広がると仮定）
+    tireSides: tireSides(wheel.tire.width, wheel.offsetMm),
     tireDiameterMm,
     // 理論上の車軸の高さ（地面から）＝ タイヤ外径の半分
     axleHeightMm: tireDiameterMm / 2,
@@ -376,6 +445,12 @@ export function compareWheels({ current, candidate, clearance = {} } = {}) {
   const outerChangeMm = n.edges.outer - c.edges.outer; // プラス = 外へ出る
   const innerChangeMm = n.edges.inner - c.edges.inner; // プラス = 内へ入る
 
+  // タイヤ側面（理論値）の変化。クリアランスの推定に使う
+  //   外側: −(ET差) + (タイヤ幅差)/2  プラス = 外へ出る（フェンダー等に近づく）
+  //   内側: +(ET差) + (タイヤ幅差)/2  プラス = 内へ入る（最寄り部品に近づく）
+  const tireOuterSideChangeMm = n.tireSides.outer - c.tireSides.outer;
+  const tireInnerSideChangeMm = n.tireSides.inner - c.tireSides.inner;
+
   // タイヤ外径
   const curDiameter = c.tireDiameterMm;
   const newDiameter = n.tireDiameterMm;
@@ -388,6 +463,8 @@ export function compareWheels({ current, candidate, clearance = {} } = {}) {
       candidate: n,
       wheelOuterEdgeChangeMm: outerChangeMm,
       wheelInnerEdgeChangeMm: innerChangeMm,
+      tireOuterSideChangeMm,
+      tireInnerSideChangeMm,
       tireDiameterChangeMm: newDiameter - curDiameter,
       tireDiameterChangePercent: (diameterRatio - 1) * 100,
       // 理論上の最低地上高変化 = 半径の差
@@ -398,8 +475,8 @@ export function compareWheels({ current, candidate, clearance = {} } = {}) {
         actualKmh: actualSpeed(display, diameterRatio),
       })),
       clearance: {
-        outer: clearanceResult(clr.value.outerMm, outerChangeMm, c.edges.outer),
-        inner: clearanceResult(clr.value.innerMm, innerChangeMm, c.edges.inner),
+        outer: clearanceResult(clr.value.outerMm, tireOuterSideChangeMm, c.tireSides.outer),
+        inner: clearanceResult(clr.value.innerMm, tireInnerSideChangeMm, c.tireSides.inner),
       },
     },
   };

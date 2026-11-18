@@ -46,8 +46,6 @@ export const MAX_DRAW_HEIGHT = { wide: 600, narrow: 440 };
 /** 図の縮尺の表示（縦横同じ縮尺） */
 export const SCALE_LABEL = '縦横同一縮尺 1:1';
 
-/** タイヤのサイドウォールの膨らみ（px）。模式なので、ほんの少しだけにする */
-export const TIRE_BULGE_PX = 2.5;
 
 /** リム中心線を、リムの上下端からはみ出させる長さ（px） */
 export const CENTER_LINE_EXTEND = 8;
@@ -99,8 +97,8 @@ export function formatEtLabel(who, offsetMm) {
   return `${formatEtValue(who, offsetMm)}（${describeEt(offsetMm)}）`;
 }
 
-/** 図の中に必ず表示する注記（タイヤ幅は実測値ではない） */
-export const TIRE_WIDTH_NOTE = '※ タイヤ幅は模式表示（実測幅ではありません）';
+/** 図の中に必ず表示する注記（タイヤ幅は公称値による理論値で、実測値ではない） */
+export const TIRE_WIDTH_NOTE = '※ タイヤ幅は公称値の理論値（実測ではない）';
 
 
 // ---------------------------------------------------------------
@@ -172,6 +170,9 @@ export function buildDiagramModel(result, { width = 640 } = {}) {
   const xs = [
     cur.edges.outer, -cur.edges.inner,
     cand.edges.outer, -cand.edges.inner,
+    // タイヤは公称幅で描くので、タイヤ側面（理論値）も表示範囲に入れる
+    cur.tireSides.outer, -cur.tireSides.inner,
+    cand.tireSides.outer, -cand.tireSides.inner,
   ];
   if (fender) xs.push(fender.positionMm);
   if (part) xs.push(-part.positionMm); // 内側は x がマイナス方向
@@ -208,8 +209,9 @@ export function buildDiagramModel(result, { width = 640 } = {}) {
 
   // --- ホイール（主役）とタイヤ（外径を示す模式表示） ------------------
   // 車軸を通る縦の面で切った断面を描く。
-  //   タイヤ: 上下2つの断面。外径（高さ）は計算値どおり。サイドウォールの膨らみは
-  //           見た目だけの模式で、突出量の判定・寸法線には使わない。
+  //   タイヤ: 上下2つの断面。外径（高さ）は計算値どおり。幅（最大幅の位置）は公称タイヤ幅で、
+  //           タイヤ中心（リム中心線）から左右均等に広げた理論上のタイヤ側面に合わせる。
+  //           サイドウォールの曲線（膨らみ方・肩の丸み）は模式で、実際の形状ではない。
   //   リム:   リム幅 × リム径の範囲内に、フランジとくぼみ（ウェル）を持つ断面で描く。
   //           外側端・内側端は計算値どおり（寸法線の基準）。
   // ハブ取付面は位置の基準線としてだけ描き、ディスクやブレーキの形は描かない。
@@ -218,7 +220,10 @@ export function buildDiagramModel(result, { width = 640 } = {}) {
     const innerX = px(-w.edges.inner);  // 画面の右側
     const x1 = Math.min(outerX, innerX);
     const x2 = Math.max(outerX, innerX);
-    const tire = { x1, x2, yb: py(0), yt: py(w.tireDiameterMm) };
+    // タイヤ側面（理論値）: 外側 = 画面の左、内側 = 画面の右
+    const sideL = px(w.tireSides.outer);
+    const sideR = px(-w.tireSides.inner);
+    const tire = { x1: sideL, x2: sideR, yb: py(0), yt: py(w.tireDiameterMm) };
     const rimHalf = w.rimDiameterMm / 2;
     const rim = { x1, x2, yb: py(w.axleHeightMm - rimHalf), yt: py(w.axleHeightMm + rimHalf) };
     const axleY = py(w.axleHeightMm);
@@ -258,23 +263,26 @@ export function buildDiagramModel(result, { width = 640 } = {}) {
     const rimD = `${rimSection(rim.yt, 1)} ${rimSection(rim.yb, -1)}`;
     const rimBox = { x: L, y: rim.yt, width: rw, height: rim.yb - rim.yt };
 
-    // タイヤ断面（模式）。現在・交換候補とも同じ生成ルール。
+    // タイヤ断面。現在・交換候補とも同じ生成ルール（曲線の作り方は従来どおり）。
     //   ビード: フランジの内側（L + ft）から、まっすぐ立ち上がって始まる
     //   サイドウォール: ビード → 最大幅 → 肩 を 2 本の 3 次ベジェでつなぐ。
-    //     最大幅の点では接線を縦にそろえ、尖らず丸く膨らむ（最大 TIRE_BULGE_PX）。
+    //     最大幅の点 = 公称タイヤ幅によるタイヤ側面（理論値）。接線を縦にそろえ、尖らず丸くつなぐ。
+    //     タイヤ幅がリム幅より広ければ外へ膨らみ、狭ければ内へすぼまる（引っ張り）形になる。
     //   ショルダー: 縦の接線から横の接線へ滑らかに曲がり、平らなトレッドへつながる。
-    // 膨らみは見た目だけで、寸法線・判定には使わない。
-    const bulge = Math.max(0, Math.min(TIRE_BULGE_PX, L - drawLeft, drawRight - R));
+    // 曲線は模式で、実際の断面形状や接地幅を計算したものではない。
+    const TL = tire.x1;                     // 最大幅（外側 = 左）
+    const tw = tire.x2 - tire.x1;           // 公称タイヤ幅（px）
     const tireSection = (yIn, yOut) => {
       const h = yOut - yIn;                 // 符号付き（上側断面はマイナス）
       const dir = Math.sign(h);
-      const r = Math.min(Math.abs(h) * 0.3, rw * 0.12); // 肩の丸み（トレッドの端）
+      const r = Math.min(Math.abs(h) * 0.3, tw * 0.12); // 肩の丸み（トレッドの端）
       const yBead = yIn - dir * fh;         // ビードはフランジの内側、ビードシートまで入る
       const yMax = yIn + h * 0.45;          // サイドウォールの最大幅の高さ
       const xBead = L + ft;
-      const xMax = L - bulge;
-      const xTread = L + r;
-      const mirror = (x) => L + R - x;      // 右側（車体内側）は左右対称
+      const xMax = TL;
+      const xTread = TL + r;
+      // 右側（車体内側）は左右対称。タイヤ中心 = リム中心線なので、リムの中央で折り返す
+      const mirror = (x) => L + R - x;
       // 左側: ビード → 最大幅（縦の接線）
       const s1 = [[xBead, yIn + h * 0.2], [xMax, yMax - h * 0.2], [xMax, yMax]];
       // 左側: 最大幅 → 肩 → トレッド（縦の接線 → 横の接線）
@@ -294,7 +302,10 @@ export function buildDiagramModel(result, { width = 640 } = {}) {
       ].join(' ');
     };
     const tireD = `${tireSection(rim.yt, tire.yt)} ${tireSection(rim.yb, tire.yb)}`;
-    const tireBox = { x: L - bulge, y: tire.yt, width: rw + 2 * bulge, height: tire.yb - tire.yt };
+    // 枠: 公称幅の範囲。タイヤがリムより狭い（引っ張り）ときは、ビードのあるリムの範囲まで含める
+    const boxL = Math.min(tire.x1, L);
+    const boxR = Math.max(tire.x2, R);
+    const tireBox = { x: boxL, y: tire.yt, width: boxR - boxL, height: tire.yb - tire.yt };
 
     // 寸法線の行を置ける「ホイールの内側の空き」の上下端
     const innerTop = rim.yt + fh + wd + th;

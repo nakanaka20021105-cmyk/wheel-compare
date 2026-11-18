@@ -208,19 +208,22 @@ describe('クリアランス（符号 + 数値）', () => {
     assert.equal(clr('+', '300').ok, true);
   });
 
-  test('7J+48 → 8J+45: 外側 +20 → 残 4.3 / 0 → 残 -15.7 / -20 → 残 -35.7（判定基準は従来どおり）', () => {
+  // タイヤ側面基準: 215/45R17 ET48 → 225/40R18 ET45 で外側のタイヤ側面は +8（ET で +3、幅の半分で +5）
+  test('7J+48 215 → 8J+45 225: 外側 +20 → 残 12.0 / 0 → 残 -8.0 / -20 → 残 -28.0（判定基準は従来どおり）', () => {
     const run = (sign, abs) => compareWheels({
       current: { ...BASE, ...tire(215, 45, 17) },
       candidate: { rimWidthJ: 8, offsetSign: '+', offsetAbs: '45', ...tire(225, 40, 18) },
       clearance: { outerSign: sign, outerAbs: abs, innerSign: '+', innerAbs: '20' },
     }).result.clearance.outer;
-    assertClose(run('+', '20').remainingMm, 4.3);
-    assert.equal(run('+', '20').level, 'verySmall');
-    assertClose(run('+', '0').remainingMm, -15.7);
+    assertClose(run('+', '20').remainingMm, 12);
+    assert.equal(run('+', '20').level, 'ok');
+    assertClose(run('+', '13').remainingMm, 5);
+    assert.equal(run('+', '13').level, 'verySmall');
+    assertClose(run('+', '0').remainingMm, -8);
     assert.equal(run('+', '0').level, 'interference');
-    assertClose(run('-', '20').remainingMm, -35.7);
-    // フェンダー等の位置 = 現在の外側端 + クリアランス（マイナスなら現在の外側端より内側）
-    assertClose(run('-', '20').positionMm, 40.9 - 20);
+    assertClose(run('-', '20').remainingMm, -28);
+    // フェンダー等の位置 = 現在のタイヤ側面 59.5 + クリアランス（マイナスなら現在のタイヤ側面より内側）
+    assertClose(run('-', '20').positionMm, 59.5 - 20);
   });
 });
 
@@ -248,7 +251,8 @@ describe('初期値', () => {
     assertClose(r.result.wheelOuterEdgeChangeMm, 15.7);
     assertClose(r.result.wheelInnerEdgeChangeMm, 9.7);
     assert.equal(r.result.tireDiameterChangeMm, 0);
-    assertClose(r.result.clearance.outer.remainingMm, 4.3);
-    assertClose(r.result.clearance.inner.remainingMm, 10.3);
+    // タイヤは同じ 205 なので、タイヤ側面は ET の差だけ動く（外側 +3 / 内側 -3）
+    assertClose(r.result.clearance.outer.remainingMm, 17);
+    assertClose(r.result.clearance.inner.remainingMm, 23);
   });
 });

@@ -107,8 +107,12 @@ function setValueWithUnit(id, value, unit) {
   el.replaceChildren(document.createTextNode(value), small);
 }
 
-/** クリアランス1件分のカードを作る */
-function createClearanceCard(title, c) {
+/**
+ * クリアランス1件分のカードを作る（タイヤ側面基準）。
+ * 推定残量は、判定に使ったのと同じ 0.1mm 単位の値（remainingRoundedMm）を表示する。
+ * @param {(mm: number) => string} describeSide タイヤ側面の動きの説明（外側へ出る など）
+ */
+function createClearanceCard(title, c, describeSide) {
   const card = document.createElement('div');
   card.className = 'card';
 
@@ -117,7 +121,7 @@ function createClearanceCard(title, c) {
 
   const value = document.createElement('dd');
   value.className = 'card-value';
-  value.textContent = `${formatNumber(c.remainingMm)}`;
+  value.textContent = `${formatNumber(c.remainingRoundedMm)}`;
   const unit = document.createElement('span');
   unit.className = 'unit-small';
   unit.textContent = 'mm（推定残量）';
@@ -125,7 +129,8 @@ function createClearanceCard(title, c) {
 
   const sub = document.createElement('dd');
   sub.className = 'card-sub';
-  sub.textContent = `現在 ${formatNumber(c.currentMm)} mm`;
+  sub.textContent = `現在 ${formatNumber(c.currentMm)} mm、タイヤ側面 ${formatSigned(c.sideChangeMm)} mm`
+    + `（${describeSide(c.sideChangeMm)}）`;
 
   const level = document.createElement('dd');
   const badge = document.createElement('span');
@@ -163,8 +168,12 @@ function renderResult(r) {
 
   // クリアランス（入力された項目だけ）
   const cards = [];
-  if (r.clearance.outer) cards.push(createClearanceCard('外側（フェンダー等まで）', r.clearance.outer));
-  if (r.clearance.inner) cards.push(createClearanceCard('内側（最寄り部品まで）', r.clearance.inner));
+  if (r.clearance.outer) {
+    cards.push(createClearanceCard('外側（タイヤ側面 → フェンダー等）', r.clearance.outer, describeOuterEdgeChange));
+  }
+  if (r.clearance.inner) {
+    cards.push(createClearanceCard('内側（タイヤ側面 → 最寄り部品）', r.clearance.inner, describeInnerEdgeChange));
+  }
   document.getElementById('r-clearance-section').hidden = cards.length === 0;
   document.getElementById('r-clearance').replaceChildren(...cards);
 
@@ -177,6 +186,8 @@ function renderResult(r) {
     ['ホイール外側端（ハブ面から外側へ）', `${formatNumber(cur.edges.outer)} mm`, `${formatNumber(cand.edges.outer)} mm`],
     ['ホイール内側端（ハブ面から内側へ）', `${formatNumber(cur.edges.inner)} mm`, `${formatNumber(cand.edges.inner)} mm`],
     ['タイヤサイズ', cur.tire.normalized, cand.tire.normalized],
+    ['タイヤ側面 外側（ハブ面から外側へ・理論値）', `${formatNumber(cur.tireSides.outer)} mm`, `${formatNumber(cand.tireSides.outer)} mm`],
+    ['タイヤ側面 内側（ハブ面から内側へ・理論値）', `${formatNumber(cur.tireSides.inner)} mm`, `${formatNumber(cand.tireSides.inner)} mm`],
     ['タイヤ外径（理論値）', `${formatNumber(cur.tireDiameterMm)} mm`, `${formatNumber(cand.tireDiameterMm)} mm`],
   ]);
 }
@@ -232,9 +243,9 @@ function showInputRangeNote() {
   setText(
     'input-range-note',
     `計算できる範囲: リム幅 ${formatRange(rimWidthJ, 'J')}（0.5J刻み）、`
-      + `オフセット ${formatRange(offsetMm, 'mm')}、`
+      + `オフセット ${formatRange(offsetMm, 'mm')}（0.1mm単位）、`
       + `タイヤ幅 ${tireRange(t.width)}、扁平率 ${tireRange(t.aspect)}、リム径 ${tireRange(t.rimInch)}、`
-      + `クリアランス ${formatRange(clearanceMm, 'mm')}。`
+      + `クリアランス ${formatRange(clearanceMm, 'mm')}（0.1mm単位）。`
       + 'この範囲は計算できる範囲であり、装着可能・安全・合法であることを意味しません。',
   );
 }

@@ -4,7 +4,7 @@ import { compareWheels } from '../js/calc.js';
 import { formatOffset } from '../js/format.js';
 import {
   buildDiagramModel, estimateTextWidth, placeText, LAYOUT, MAX_DRAW_HEIGHT,
-  TIRE_WIDTH_NOTE, SCALE_LABEL, TIRE_BULGE_PX, formatRimWidthLabel, formatEtLabel,
+  TIRE_WIDTH_NOTE, SCALE_LABEL, formatRimWidthLabel, formatEtLabel,
 } from '../js/diagram.js';
 
 /** compareWheels の結果を取り出す（失敗したらテストを止める） */
@@ -140,7 +140,7 @@ describe('buildDiagramModel: 同一座標系・同一縮尺', () => {
       const o = outline(key);
       assert.ok(dimXs.has(o.x.toFixed(6)), `inner edge: ${key}`);
       assert.ok(dimXs.has((o.x + o.width).toFixed(6)), `outer edge: ${key}`);
-      // タイヤの模式は膨らみのぶんリムより広いが、その端は寸法線に使われない
+      // タイヤ（公称 215 / 225mm）はリム（7J = 177.8 / 8J = 203.2mm）より広いが、その端は寸法線に使われない
       const t = tire(key);
       assert.ok(t.width > o.width);
       assert.equal(dimXs.has(t.x.toFixed(6)), false);
@@ -159,18 +159,57 @@ describe('buildDiagramModel: 同一座標系・同一縮尺', () => {
     }
   });
 
-  test('サイドウォールの膨らみは TIRE_BULGE_PX 以下（すべてのケース・幅）', () => {
+  test('タイヤの最大幅 = 公称タイヤ幅、中心 = リム中心線（すべてのケース・幅）', () => {
     for (const input of Object.values(CASES)) {
       for (const width of WIDTHS) {
-        const m = buildDiagramModel(resultOf(input), { width });
-        for (const key of ['current', 'candidate']) {
+        const r = resultOf(input);
+        const m = buildDiagramModel(r, { width });
+        const hub = m.shapes.find((s) => s.className === 'd-hub').x1;
+        for (const [key, w] of [['current', r.current], ['candidate', r.candidate]]) {
           const o = m.shapes.find((s) => s.className === `d-${key}-outline`);
           const t = m.shapes.find((s) => s.className === `d-${key}-tire`);
-          assert.ok(o.x - t.x <= TIRE_BULGE_PX + 1e-9 && o.x - t.x >= -1e-9);
-          assert.ok(Math.abs((t.width - o.width) / 2 - (o.x - t.x)) < 1e-9);
+          // タイヤ側面（理論値）の位置: 外側 = 左、内側 = 右
+          const sideL = hub - w.tireSides.outer * m.scaleX;
+          const sideR = hub + w.tireSides.inner * m.scaleX;
+          assert.ok(Math.abs((sideR - sideL) - w.tire.width * m.scaleX) < 1e-9);
+          // タイヤ中心とリム中心が一致（左右対称）
+          assert.ok(Math.abs((sideL + sideR) / 2 - (o.x + o.width / 2)) < 1e-9);
+          // 最大幅の点（ベジェの終点）が、タイヤ側面の位置にある（左右・上下とも）
+          const ends = [...t.d.matchAll(/C(?:\s*-?[\d.]+\s+-?[\d.]+){2}\s*(-?[\d.]+)\s+(-?[\d.]+)/g)].map((mm) => Number(mm[1]));
+          assert.equal(ends.filter((x) => Math.abs(x - sideL) <= 0.051).length, 2, `${key} left w${width}`);
+          assert.equal(ends.filter((x) => Math.abs(x - sideR) <= 0.051).length, 2, `${key} right w${width}`);
+          // 枠: 公称幅の範囲（リムより狭いときはリムの範囲まで）
+          assert.ok(Math.abs(t.x - Math.min(sideL, o.x)) < 1e-9);
+          assert.ok(Math.abs(t.x + t.width - Math.max(sideR, o.x + o.width)) < 1e-9);
         }
       }
     }
+  });
+
+  test('タイヤがリムより狭い（引っ張り）ときは、最大幅がリムより内側になる', () => {
+    // 165mm のタイヤを 10J（254mm）に: 片側 44.5mm 内側
+    const r = resultOf({
+      current: { rimWidthJ: 10, offsetMm: 30, tireSize: '165/55R15' },
+      candidate: { rimWidthJ: 10, offsetMm: 30, tireSize: '165/55R15' },
+    });
+    const m = buildDiagramModel(r, { width: 640 });
+    const o = m.shapes.find((s) => s.className === 'd-current-outline');
+    const hub = m.shapes.find((s) => s.className === 'd-hub').x1;
+    const sideL = hub - r.current.tireSides.outer * m.scaleX;
+    assert.ok(sideL > o.x);
+    assert.ok(Math.abs((sideL - o.x) - 44.5 * m.scaleX) < 1e-6); // (254 − 165) / 2
+  });
+
+  test('フェンダー等・最寄り部品の線とタイヤ側面の間隔 = 入力したクリアランス', () => {
+    const r = resultOf({ ...CASES['7J +48 → 8J +45'], clearance: { outerMm: 20, innerMm: 15 } });
+    const m = buildDiagramModel(r, { width: 640 });
+    const hub = m.shapes.find((s) => s.className === 'd-hub').x1;
+    const fender = m.shapes.find((s) => s.className === 'd-fender').x1;
+    const part = m.shapes.find((s) => s.className === 'd-part').x1;
+    const curL = hub - r.current.tireSides.outer * m.scaleX;
+    const curR = hub + r.current.tireSides.inner * m.scaleX;
+    assert.ok(Math.abs((curL - fender) - 20 * m.scaleX) < 1e-9);
+    assert.ok(Math.abs((part - curR) - 15 * m.scaleX) < 1e-9);
   });
 
   test('ハブ取付面は図の左右中央（すべてのケース・幅）', () => {

@@ -303,27 +303,30 @@ describe('クリアランス（任意入力）', () => {
     assert.equal(judgeClearance(5.1), 'ok');
   });
 
-  test('7J+48 → 8J+45: 外側 20mm → 残 4.3mm（非常に小さい）、内側 15mm → 残 5.3mm（残量あり）', () => {
+  // タイヤ側面基準: 215 ET48 → 225 ET45
+  //   外側: 59.5 → 67.5（+8 = ET -3 で +3、幅 +10 の半分で +5）
+  //   内側: 155.5 → 157.5（+2 = ET -3 で -3、幅の半分で +5）
+  test('7J+48 215 → 8J+45 225: 外側 13mm → 残 5.0mm（非常に小さい）、内側 15mm → 残 13.0mm（残量あり）', () => {
     const { result } = compareWheels({
       current: W_7J_48,
       candidate: W_8J_45,
-      clearance: { outerMm: 20, innerMm: 15 },
+      clearance: { outerMm: 13, innerMm: 15 },
     });
-    assertClose(result.clearance.outer.remainingMm, 4.3);
+    assertClose(result.clearance.outer.remainingMm, 5);
     assert.equal(result.clearance.outer.level, 'verySmall');
     assert.equal(result.clearance.outer.label, '非常に小さい');
-    assertClose(result.clearance.inner.remainingMm, 5.3);
+    assertClose(result.clearance.inner.remainingMm, 13);
     assert.equal(result.clearance.inner.level, 'ok');
     assert.equal(result.clearance.inner.label, '数値上の残量あり');
   });
 
-  test('外側 10mm → 残 -5.7mm（干渉または突出の可能性）', () => {
+  test('外側 5mm → 残 -3.0mm（干渉または突出の可能性）', () => {
     const { result } = compareWheels({
       current: W_7J_48,
       candidate: W_8J_45,
-      clearance: { outerMm: 10 },
+      clearance: { outerMm: 5 },
     });
-    assertClose(result.clearance.outer.remainingMm, -5.7);
+    assertClose(result.clearance.outer.remainingMm, -3);
     assert.equal(result.clearance.outer.level, 'interference');
     assert.equal(result.clearance.outer.label, '静止状態でも干渉または突出の可能性');
   });
@@ -335,7 +338,7 @@ describe('クリアランス（任意入力）', () => {
       clearance: { outerMm: '', innerMm: '30' },
     });
     assert.equal(result.clearance.outer, null);
-    assertClose(result.clearance.inner.remainingMm, 20.3);
+    assertClose(result.clearance.inner.remainingMm, 28); // 30 − 2
   });
 
   test('内側が離れる変更（内側端が負の変化）では残量が増える', () => {
@@ -372,14 +375,16 @@ describe('図に使う派生値', () => {
     assertClose(result.candidate.axleHeightMm - result.current.axleHeightMm, result.groundClearanceChangeMm);
   });
 
-  test('フェンダー等の位置 = 現在の外側端 40.9 + 20 = 60.9mm（ハブ面から外側へ）', () => {
-    assertClose(result.clearance.outer.positionMm, 60.9);
-    // 候補の外側端からの距離 = 推定残量
-    assertClose(result.clearance.outer.positionMm - result.candidate.edges.outer, result.clearance.outer.remainingMm);
+  test('フェンダー等の位置 = 現在のタイヤ側面（外側）59.5 + 20 = 79.5mm（ハブ面から外側へ）', () => {
+    assertClose(result.current.tireSides.outer, 59.5); // 215/2 − 48
+    assertClose(result.clearance.outer.positionMm, 79.5);
+    // 候補のタイヤ側面からの距離 = 推定残量
+    assertClose(result.clearance.outer.positionMm - result.candidate.tireSides.outer, result.clearance.outer.remainingMm);
   });
 
-  test('最寄り部品の位置 = 現在の内側端 136.9 + 15 = 151.9mm（ハブ面から内側へ）', () => {
-    assertClose(result.clearance.inner.positionMm, 151.9);
-    assertClose(result.clearance.inner.positionMm - result.candidate.edges.inner, result.clearance.inner.remainingMm);
+  test('最寄り部品の位置 = 現在のタイヤ側面（内側）155.5 + 15 = 170.5mm（ハブ面から内側へ）', () => {
+    assertClose(result.current.tireSides.inner, 155.5); // 215/2 + 48
+    assertClose(result.clearance.inner.positionMm, 170.5);
+    assertClose(result.clearance.inner.positionMm - result.candidate.tireSides.inner, result.clearance.inner.remainingMm);
   });
 });
