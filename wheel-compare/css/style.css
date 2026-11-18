@@ -294,7 +294,8 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 .card dd { margin: 0; }
 .card-value {
   font-size: 1.6rem; font-weight: bold; line-height: 1.2; margin-top: 2px !important;
-  font-variant-numeric: tabular-nums; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  /* 折り返しは「（推定残量）」の前などだけ（数値と単位の間には折り返し位置がない）。文字を大きくしたときのはみ出し防止 */
 }
 .card-value .unit-small { font-size: 0.9rem; font-weight: normal; margin-left: 2px; }
 .card-sub { font-size: 0.8rem; color: var(--text-muted); }
@@ -416,7 +417,7 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 
 /* ---------- ご利用上の注意・免責事項 ---------- */
 .result-note { margin-top: 10px; }
-.result-note a, .usage-notes a { color: var(--focus); }
+.note a, .usage-notes a, .guide a { color: var(--focus); } /* ブラウザ既定のリンク色はダークモードで読みにくいため */
 
 .usage-notes h2 { font-size: 0.95rem; }
 /* 最重要の注意（常に表示）: 左に色の帯を付けて、重要だと分かるようにする */
@@ -455,6 +456,54 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 .usage-levels .level { margin-top: 0; }
 .usage-range { min-width: 8.5em; color: var(--text); }
 
+/* ---------- はじめての方へ（説明） ---------- */
+/* ヘッダーの案内リンク */
+.site-header .guide-links {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 14px; margin-top: 6px; font-size: 0.85rem;
+}
+.guide-links a { color: var(--focus); padding: 4px 0; }
+
+.guide h2 { font-size: 0.95rem; }
+.guide-details { border-top: 1px solid var(--border); }
+.guide-details:last-of-type { border-bottom: 1px solid var(--border); }
+.guide-details summary {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 2px;
+  cursor: pointer; color: var(--focus); list-style: none;
+}
+.guide-details summary::-webkit-details-marker { display: none; }
+.guide-details summary::before {
+  content: ""; flex: none; width: 0; height: 0;
+  border-left: 7px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+}
+.guide-details[open] summary::before { transform: rotate(90deg); }
+.guide-details summary:hover h3 { text-decoration: underline; }
+.guide-details summary h3 { margin: 0; font-size: 0.9rem; color: inherit; }
+.guide-body { border-top: 0; padding: 0 0 10px; }
+.guide-body h4 { font-size: 0.85rem; color: var(--text); margin: 12px 0 4px; }
+.guide-body > :first-child { margin-top: 0; }
+.guide-example { font-weight: bold; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.guide-term { display: inline-block; min-width: 2.5em; font-weight: bold; color: var(--text); }
+.guide-key {
+  color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+  border-left: 4px solid var(--focus); border-radius: 6px; padding: 8px 10px;
+}
+.guide-steps { padding-left: 1.4em; margin: 0; }
+.guide-steps > li + li { margin-top: 10px; }
+.guide-steps h4 { margin: 0 0 2px; }
+.guide-steps ul { margin-top: 4px; }
+
+/* 文字を大きくしても、タイヤサイズ表記（205/50R17 など）が欄の外へはみ出さないように折り返す */
+.tire-summary { overflow-wrap: anywhere; }
+
+/* 結果カード: 文字を大きくしてカードに収まらないときは、列を減らす（幅は文字の大きさ em で判定） */
+#results { container-type: inline-size; }
+@container (max-width: 40em) {
+  .summary-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (max-width: 16em) {
+  .summary-cards { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ---------- スマホ向けの調整 ---------- */
 @media (max-width: 480px) {
   .site-header { padding-top: 14px; }
@@ -468,21 +517,48 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
   .legend { font-size: 0.75rem; gap: 2px 10px; }
 }
 
-/* 単位を項目名の側に出すための表記（狭い画面だけ表示） */
+/* 単位を項目名の側に出すための表記（入力欄が狭いときだけ表示） */
 .unit-narrow { display: none; font-weight: normal; color: var(--text-muted); font-size: 0.8rem; }
 
-/* 狭いスマホ（〜399px）: 直接入力欄の後ろの「mm」を項目名側へ移し、数値の表示幅を確保する */
-@media (max-width: 399px) {
+/* ---------- 入力欄の幅に応じた調整（コンテナクエリ） ----------
+   画面幅ではなく「入力欄 1 つ分（.cell）の幅」を文字の大きさ（em）で判定する。
+   そのため、ブラウザや OS の設定で文字を大きくしたときにも、同じ規則で段階的に切り替わる。
+   通常の文字サイズでは、375px 前後で ①、340px 前後で ② になる（③ にはならない）。 */
+.compare-grid > .cell, .clearance-grid > .cell { container-type: inline-size; }
+
+/* ① 少し狭い: 直接入力欄の後ろの「mm」を項目名側へ移し、数値の表示幅を確保する */
+@container (max-width: 9.8em) {
   .signed-input .unit-after { display: none; }
   .unit-narrow { display: inline; }
   .signed-input input[type="text"] { padding-left: 6px; padding-right: 6px; }
 }
 
-/* とても狭いスマホ（〜359px）: 選択式の －／＋ を少し細くし、▼ 周りの余白を詰める（高さ 44px は維持） */
-@media (max-width: 359px) {
+/* ② さらに狭い: 選択式の －／＋ を少し細くし、▼ 周りの余白を詰める（高さ 44px は維持） */
+@container (max-width: 8.8em) {
   .select-stepper { grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem; }
   .select-stepper select {
     padding: 0 13px 0 3px;
     background-position: right 8px center, right 4px center;
   }
+}
+
+/* ③ 1 行に収まらない（文字を大きくしたときなど）: 2 段に組み替える。
+   選択式は「値」を上の段に全幅で、－／＋ を下の段に半分ずつ。
+   符号＋数値は「＋／−」を上の段に全幅で、数値を下の段に全幅で。 */
+@container (max-width: 7.8em) {
+  .select-stepper {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-areas: "value value" "minus plus";
+  }
+  .select-stepper select {
+    grid-area: value; border-left: 0; border-right: 0; border-bottom: 1px solid var(--border);
+    padding: 0 14px 0 4px;
+  }
+  .select-stepper .step-btn[data-step="-1"] { grid-area: minus; border-right: 1px solid var(--border); }
+  .select-stepper .step-btn[data-step="1"] { grid-area: plus; }
+
+  .signed-input { flex-wrap: wrap; }
+  .signed-input .sign-toggle { flex: 1 1 100%; }
+  .signed-input .sign-toggle label { flex: 1 1 0; width: auto; }
+  .signed-input input[type="text"] { flex: 1 1 100%; }
 }

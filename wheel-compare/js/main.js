@@ -326,8 +326,30 @@ function applyDefaults() {
   }
 }
 
+/**
+ * ページ内リンク（例: #guide-clearance）の移動先が折りたたみ（details）の中・そのものなら開く。
+ * 閉じたままだと、リンクを押しても内容が見えないため。
+ */
+function openDetailsFor(id) {
+  if (!id) return;
+  const target = document.getElementById(id);
+  const details = target?.closest('details');
+  if (details) details.open = true;
+}
+
+function setupInPageLinks() {
+  // 同じリンクを2回押したとき（hashchange が起きない）にも開くよう、クリック時にも開く
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href^="#"]');
+    if (link) openDetailsFor(decodeURIComponent(link.getAttribute('href').slice(1)));
+  });
+  window.addEventListener('hashchange', () => openDetailsFor(decodeURIComponent(location.hash.slice(1))));
+  openDetailsFor(decodeURIComponent(location.hash.slice(1))); // URL に #… を付けて開いたとき
+}
+
 fillSelectOptions();
 applyDefaults();
 showInputRangeNote();
 openDetailsOnWideScreen();
+setupInPageLinks();
 update();

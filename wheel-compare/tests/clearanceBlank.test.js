@@ -162,8 +162,11 @@ describe('マイナスのクリアランス', () => {
 });
 
 describe('マイナスの説明文', () => {
-  test('「基準位置」ではなく、フェンダー等・最寄り部品との関係で説明している', () => {
-    assert.doesNotMatch(HTML, /基準位置を超えている/);
+  test('入力欄の説明は「基準位置」ではなく、フェンダー等・最寄り部品との関係で説明している', () => {
+    // 入力欄（クリアランスの fieldset）の説明だけを対象にする。
+    // 「クリアランスの測り方」では、外側の説明の中で「基準位置」（＝フェンダーなど）と定義して使っている。
+    const fieldset = HTML.slice(HTML.indexOf('<fieldset class="clearance-fields">'), HTML.indexOf('</fieldset>'));
+    assert.doesNotMatch(fieldset, /基準位置を超えている/);
     assert.match(HTML, /− は、現在のタイヤ側面がすでにフェンダー等（内側は最寄り部品）の位置を超えている場合に使います。/);
   });
 });
