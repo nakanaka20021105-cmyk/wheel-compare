@@ -52,7 +52,7 @@
           </div>
 
           <!-- オフセット（符号 + 数値） -->
-          <div class="row-label" aria-hidden="true">オフセット</div>
+          <div class="row-label" aria-hidden="true">オフセット<span class="row-label-sub">mm</span></div>
           <div class="cell">
             <div class="signed-input">
               <div class="sign-toggle" role="radiogroup" aria-label="現在のオフセットの符号">
@@ -167,10 +167,10 @@
 
         <fieldset class="clearance-fields">
           <legend>現在のクリアランス <span class="optional">任意</span></legend>
-          <p class="note">実車で、<strong>現在のタイヤ側面</strong>から測った距離を入力します。入力した項目だけ、交換候補を装着した後の推定残量を計算します。数値を空にすると、その側は計算しません。− は、現在の状態ですでに基準位置を超えていることを表します。</p>
+          <p class="note">実車で、<strong>現在のタイヤ側面</strong>から測った距離を入力します。入力した項目だけ、交換候補を装着した後の推定残量を計算します。数値を空にすると、その側は計算しません。− は、現在のタイヤ側面がすでにフェンダー等（内側は最寄り部品）の位置を超えている場合に使います。</p>
           <div class="clearance-grid">
             <div class="cell">
-              <label for="clearance-outerAbs">外側<span class="label-sub">現在のタイヤ側面からフェンダー等まで</span></label>
+              <label for="clearance-outerAbs">外側<span class="unit-narrow">（mm）</span><span class="label-sub">現在のタイヤ側面からフェンダー等まで</span></label>
               <div class="signed-input">
                 <div class="sign-toggle" role="radiogroup" aria-label="外側クリアランスの符号">
                   <input type="radio" id="clearance-outerSign-plus" name="clearance-outerSign"
@@ -181,14 +181,14 @@
                   <label for="clearance-outerSign-minus" aria-hidden="true">−</label>
                 </div>
                 <input id="clearance-outerAbs" data-group="clearance" data-field="outerAbs" data-error-key="outerMm"
-                       type="text" inputmode="decimal" value="20" placeholder="未入力" autocomplete="off"
+                       type="text" inputmode="decimal" value="" placeholder="未入力" autocomplete="off"
                        aria-describedby="clearance-outerMm-error">
                 <span class="unit-after" aria-hidden="true">mm</span>
               </div>
               <p class="error" id="clearance-outerMm-error"></p>
             </div>
             <div class="cell">
-              <label for="clearance-innerAbs">内側<span class="label-sub">現在のタイヤ側面からサスペンション等の最寄り部品まで</span></label>
+              <label for="clearance-innerAbs">内側<span class="unit-narrow">（mm）</span><span class="label-sub">現在のタイヤ側面からサスペンション等の最寄り部品まで</span></label>
               <div class="signed-input">
                 <div class="sign-toggle" role="radiogroup" aria-label="内側クリアランスの符号">
                   <input type="radio" id="clearance-innerSign-plus" name="clearance-innerSign"
@@ -199,7 +199,7 @@
                   <label for="clearance-innerSign-minus" aria-hidden="true">−</label>
                 </div>
                 <input id="clearance-innerAbs" data-group="clearance" data-field="innerAbs" data-error-key="innerMm"
-                       type="text" inputmode="decimal" value="20" placeholder="未入力" autocomplete="off"
+                       type="text" inputmode="decimal" value="" placeholder="未入力" autocomplete="off"
                        aria-describedby="clearance-innerMm-error">
                 <span class="unit-after" aria-hidden="true">mm</span>
               </div>

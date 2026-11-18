@@ -229,13 +229,13 @@ describe('クリアランス（符号 + 数値）', () => {
 
 // ---------------------------------------------------------------
 describe('初期値', () => {
-  test('現在・交換候補とも 205/50R17、クリアランス外側・内側とも +20mm', () => {
+  test('現在・交換候補とも 205/50R17、クリアランス外側・内側とも未入力（空欄）', () => {
     for (const g of ['current', 'candidate']) {
       const d = DEFAULT_INPUTS[g];
       assert.deepEqual([d.tireWidth, d.tireAspect, d.tireRimInch], [205, 50, 17]);
       assert.equal(d.offsetSign, '+');
     }
-    assert.deepEqual(DEFAULT_INPUTS.clearance, { outerSign: '+', outerAbs: 20, innerSign: '+', innerAbs: 20 });
+    assert.deepEqual(DEFAULT_INPUTS.clearance, { outerSign: '+', outerAbs: '', innerSign: '+', innerAbs: '' });
   });
 
   test('リム幅・オフセットは従来の初期値（7J +48 / 8J +45）', () => {
@@ -245,14 +245,16 @@ describe('初期値', () => {
     assert.equal(DEFAULT_INPUTS.candidate.offsetAbs, 45);
   });
 
-  test('初期値のまま計算でき、クリアランスも両側計算される', () => {
+  test('初期値のまま計算でき、クリアランスは両側とも計算しない', () => {
     const r = compareWheels(DEFAULT_INPUTS);
     assert.equal(r.ok, true);
     assertClose(r.result.wheelOuterEdgeChangeMm, 15.7);
     assertClose(r.result.wheelInnerEdgeChangeMm, 9.7);
     assert.equal(r.result.tireDiameterChangeMm, 0);
+    assert.equal(r.result.clearance.outer, null);
+    assert.equal(r.result.clearance.inner, null);
     // タイヤは同じ 205 なので、タイヤ側面は ET の差だけ動く（外側 +3 / 内側 -3）
-    assertClose(r.result.clearance.outer.remainingMm, 17);
-    assertClose(r.result.clearance.inner.remainingMm, 23);
+    assertClose(r.result.tireOuterSideChangeMm, 3);
+    assertClose(r.result.tireInnerSideChangeMm, -3);
   });
 });

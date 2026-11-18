@@ -431,3 +431,22 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
   .compare-grid { gap: 6px 8px; }
   .legend { font-size: 0.75rem; gap: 2px 10px; }
 }
+
+/* 単位を項目名の側に出すための表記（狭い画面だけ表示） */
+.unit-narrow { display: none; font-weight: normal; color: var(--text-muted); font-size: 0.8rem; }
+
+/* 狭いスマホ（〜399px）: 直接入力欄の後ろの「mm」を項目名側へ移し、数値の表示幅を確保する */
+@media (max-width: 399px) {
+  .signed-input .unit-after { display: none; }
+  .unit-narrow { display: inline; }
+  .signed-input input[type="text"] { padding-left: 6px; padding-right: 6px; }
+}
+
+/* とても狭いスマホ（〜359px）: 選択式の －／＋ を少し細くし、▼ 周りの余白を詰める（高さ 44px は維持） */
+@media (max-width: 359px) {
+  .select-stepper { grid-template-columns: 2.25rem minmax(0, 1fr) 2.25rem; }
+  .select-stepper select {
+    padding: 0 13px 0 3px;
+    background-position: right 8px center, right 4px center;
+  }
+}

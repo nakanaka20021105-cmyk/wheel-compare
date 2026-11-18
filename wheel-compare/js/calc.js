@@ -36,11 +36,15 @@ export const TIRE_INPUT_LIMITS = {
   rimInch: { min: 7, max: 35, step: 1, unit: 'インチ', label: 'リム径' },
 };
 
-/** 画面の初期値 */
+/**
+ * 画面の初期値。
+ * クリアランスは実車を測らないと分からないので、初期状態は未入力（空欄）にする。
+ * 未入力は「値がない」状態で、0mm とは別物（未入力の側は計算・判定しない）。
+ */
 export const DEFAULT_INPUTS = {
   current: { rimWidthJ: 7, offsetSign: '+', offsetAbs: 48, tireWidth: 205, tireAspect: 50, tireRimInch: 17 },
   candidate: { rimWidthJ: 8, offsetSign: '+', offsetAbs: 45, tireWidth: 205, tireAspect: 50, tireRimInch: 17 },
-  clearance: { outerSign: '+', outerAbs: 20, innerSign: '+', innerAbs: 20 },
+  clearance: { outerSign: '+', outerAbs: '', innerSign: '+', innerAbs: '' },
 };
 
 /** クリアランス判定のしきい値（mm） */
@@ -338,7 +342,8 @@ export function validateWheelInput(input = {}) {
 /**
  * 任意入力のクリアランスを検証・変換する。
  * 各側は outerMm（符号付き 1 欄）か、outerSign + outerAbs（符号 + 絶対値）で受け取る（内側も同様）。
- * マイナスは「現在の状態ですでに基準位置を超えている」ことを表す。
+ * マイナスは「現在のタイヤ側面がすでにフェンダー等（内側は最寄り部品）の位置を超えている」ことを表す。
+ * 空欄・未指定は未入力（null）として扱い、エラーにしない。0 は有効な実測値。
  * @param {{ outerMm?: unknown, innerMm?: unknown, outerSign?: unknown, outerAbs?: unknown,
  *           innerSign?: unknown, innerAbs?: unknown }} input
  * @returns {{ ok: true, value: { outerMm: number | null, innerMm: number | null } }
