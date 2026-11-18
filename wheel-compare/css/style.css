@@ -414,10 +414,46 @@ input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; marg
 .result-table thead th { color: var(--text-muted); font-weight: bold; font-size: 0.8rem; }
 .result-table tbody th { font-weight: normal; }
 
-/* ---------- 注意事項 ---------- */
-.notes h2 { font-size: 0.95rem; }
-.notes ul { margin: 0; padding-left: 1.2em; font-size: 0.82rem; color: var(--text-muted); }
-.notes li + li { margin-top: 4px; }
+/* ---------- ご利用上の注意・免責事項 ---------- */
+.result-note { margin-top: 10px; }
+.result-note a, .usage-notes a { color: var(--focus); }
+
+.usage-notes h2 { font-size: 0.95rem; }
+/* 最重要の注意（常に表示）: 左に色の帯を付けて、重要だと分かるようにする */
+.usage-callout {
+  border: 1px solid var(--border); border-left: 4px solid var(--level-verySmall);
+  border-radius: 6px; background: var(--surface-2); padding: 10px 12px;
+  font-size: 0.88rem; font-weight: bold; line-height: 1.6;
+}
+.usage-callout p { margin: 0; }
+.usage-callout p + p { margin-top: 6px; }
+
+/* 詳しい注意事項（details / summary。開閉は ▶ / ▼ の印で分かる） */
+.usage-details { margin-top: 10px; }
+.usage-details summary {
+  display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 2px;
+  cursor: pointer; font-weight: bold; font-size: 0.9rem; color: var(--focus);
+  list-style: none;
+}
+.usage-details summary::-webkit-details-marker { display: none; }
+.usage-details summary::before {
+  content: ""; flex: none; width: 0; height: 0;
+  border-left: 7px solid currentColor; border-top: 5px solid transparent; border-bottom: 5px solid transparent;
+}
+.usage-details[open] summary::before { transform: rotate(90deg); }
+.usage-details summary:hover { text-decoration: underline; }
+.usage-body {
+  border-top: 1px solid var(--border); padding-top: 4px;
+  font-size: 0.82rem; color: var(--text-muted); overflow-wrap: anywhere;
+}
+.usage-body h3 { font-size: 0.88rem; color: var(--text); margin: 14px 0 6px; }
+.usage-body p { margin: 0 0 6px; }
+.usage-body ul { margin: 0 0 6px; padding-left: 1.2em; }
+.usage-body li + li { margin-top: 3px; }
+.usage-levels { list-style: none; padding-left: 0 !important; }
+.usage-levels li { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; }
+.usage-levels .level { margin-top: 0; }
+.usage-range { min-width: 8.5em; color: var(--text); }
 
 /* ---------- スマホ向けの調整 ---------- */
 @media (max-width: 480px) {
