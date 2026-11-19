@@ -56,11 +56,11 @@ describe('OGP', () => {
     assert.equal(meta('property', 'og:locale'), 'ja_JP');
   });
 
-  test('独自ドメイン確定前なので og:url・og:image・canonical・favicon はまだない', () => {
+  test('独自ドメイン確定前なので og:url・og:image・canonical はまだない', () => {
     assert.doesNotMatch(HTML, /property="og:url"/);
     assert.doesNotMatch(HTML, /property="og:image/);
     assert.doesNotMatch(HTML, /rel="canonical"/);
-    assert.doesNotMatch(HTML, /rel="(shortcut )?icon"/);
+    // favicon は tests/favicon.test.js で確認する
   });
 });
 
